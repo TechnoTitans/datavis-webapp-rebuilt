@@ -1,0 +1,978 @@
+/* App.css - Component Style Imports */
+@import './styles/tables.css';
+@import './styles/settings.css';
+
+.setting-description {
+  font-size: 0.9rem;
+  color: #b0b0b0;
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+}
+
+/* Toggle Switch Styles */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 8px rgba(37, 99, 235, 0.5);
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+/* Password Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: linear-gradient(135deg, #3a3a3a, #424242);
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  min-width: 400px;
+  text-align: center;
+  border: 1px solid #4a4a4a;
+}
+
+.modal h3 {
+  margin-top: 0;
+  color: #e0e0e0;
+}
+
+.password-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #4a4a4a;
+  border-radius: 8px;
+  font-size: 1rem;
+  margin: 1rem 0;
+  box-sizing: border-box;
+  background-color: #2a2a2a;
+  color: #e0e0e0;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.btn-confirm, .btn-cancel {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-confirm:hover, .btn-cancel:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.btn-confirm {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+}
+
+.btn-confirm:hover {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+}
+
+.btn-cancel {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: white;
+}
+
+.btn-cancel:hover {
+  background: linear-gradient(135deg, #b91c1c, #991b1b);
+}
+
+/* Upload Component Styles */
+.upload-container {
+  padding: 2rem;
+  background: linear-gradient(135deg, #3a3a3a, #424242);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  border: 1px solid #4a4a4a;
+  margin: 1rem 0;
+}
+
+.upload-section {
+  margin-bottom: 2rem;
+}
+
+.camera-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background-color: #323232;
+  border-radius: 12px;
+  border: 1px solid #4a4a4a;
+}
+
+.camera-button-wrapper {
+  margin-bottom: 1rem;
+}
+
+.camera-button {
+  padding: 0.75rem 1.5rem;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.camera-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.camera-button.start {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+
+.camera-button.stop {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+}
+
+.video-container video {
+  width: 100%;
+  max-width: 500px;
+  height: 300px;
+  border: 2px solid #2563eb;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.video-instruction {
+  font-size: 0.9em;
+  color: #b0b0b0;
+  margin-top: 0.5rem;
+}
+
+.manual-input-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background-color: #323232;
+  border-radius: 12px;
+  border: 1px solid #4a4a4a;
+}
+
+.manual-input-description {
+  font-size: 0.9em;
+  color: #b0b0b0;
+  margin-bottom: 1rem;
+}
+
+.manual-input-textarea {
+  width: 100%;
+  height: 150px;
+  padding: 0.75rem;
+  border: 1px solid #4a4a4a;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 0.9em;
+  resize: vertical;
+  background-color: #2a2a2a;
+  color: #e0e0e0;
+}
+
+.parse-button {
+  padding: 0.75rem 1.5rem;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.parse-button:hover:not(.disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.parse-button.enabled {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+
+.parse-button.disabled {
+  background-color: #6b7280;
+  cursor: not-allowed;
+}
+
+.message {
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.message.error {
+  background: linear-gradient(135deg, #fecaca, #f87171);
+  color: #7f1d1d;
+  border: 1px solid #dc2626;
+}
+
+.message.success {
+  background: linear-gradient(135deg, #bbf7d0, #86efac);
+  color: #14532d;
+  border: 1px solid #16a34a;
+}
+
+.parsed-data-container {
+  margin: 1rem 0;
+  padding: 1.5rem;
+  border: 1px solid #4a4a4a;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #323232, #3a3a3a);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.upload-button {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.upload-button:hover {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.upload-note {
+  font-size: 0.9em;
+  color: #b0b0b0;
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+.unconfirmed-data-container {
+  margin-top: 1rem;
+}
+
+.unconfirmed-item {
+  border: 1px solid #4a4a4a;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #323232, #3a3a3a);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.unconfirmed-item-actions {
+  margin-top: 1rem;
+}
+
+.approve-button {
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-right: 0.5rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.approve-button:hover {
+  background: linear-gradient(135deg, #15803d, #166534);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.reject-button {
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.reject-button:hover {
+  background: linear-gradient(135deg, #b91c1c, #991b1b);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.info-panel {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid #4a4a4a;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.info-panel.blue {
+  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  border: 1px solid #3b82f6;
+  color: white;
+}
+
+.info-panel-subtitle {
+  font-size: 0.9em;
+  color: #b0b0b0;
+  margin-top: 1rem;
+}
+
+/* Main Layout Container */
+.layout-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Page Content Wrapper */
+.page-content {
+  background: linear-gradient(135deg, #3a3a3a, #424242);
+  border-radius: 16px;
+  padding: 2rem;
+  margin: 1rem auto;
+  width: 1200px;
+  max-width: calc(100% - 2rem);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  border: 1px solid #4a4a4a;
+}
+
+/* Team Data Table Specific Styles */
+.team-data-table-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: 1rem 0;
+  border-radius: 8px;
+  border: 1px solid #4a4a4a;
+  background-color: #3a3a3a;
+  max-width: 100%;
+}
+
+.team-data-table-container table {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  width: auto;
+  min-width: 100%;
+  height: auto;
+  max-height: 500px;
+  overflow-y: auto;
+  display: table;
+}
+
+.team-data-table-container table thead {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.team-data-table-container table tbody {
+  display: table-row-group;
+}
+
+.team-data-table-container table th,
+.team-data-table-container table td {
+  white-space: nowrap;
+  min-width: 100px;
+  max-width: none;
+  width: auto;
+}
+
+.team-data-table-container table th:first-child,
+.team-data-table-container table td:first-child {
+  min-width: 60px;
+  width: 70px;
+  position: sticky;
+  left: 0;
+  background-color: #3a3a3a;
+  z-index: 15;
+}
+
+.team-data-table-container table th:first-child {
+  background-color: #2563eb;
+  z-index: 25;
+}
+
+.team-data-table-container table th:nth-child(2),
+.team-data-table-container table td:nth-child(2) {
+  min-width: 120px;
+  width: 150px;
+  position: sticky;
+  left: 70px;
+  background-color: #3a3a3a;
+  z-index: 15;
+}
+
+.team-data-table-container table th:nth-child(2) {
+  background-color: #2563eb;
+  z-index: 25;
+}
+
+/* Better responsive table behavior */
+@media (max-width: 1024px) {
+  table th, table td {
+    font-size: 0.8rem;
+    padding: 0.4rem;
+    max-width: 120px;
+  }
+  
+  table th:first-child, table td:first-child {
+    min-width: 50px;
+    max-width: 60px;
+  }
+  
+  table th:nth-child(2), table td:nth-child(2) {
+    min-width: 100px;
+    max-width: 140px;
+  }
+}
+
+@media (max-width: 768px) {
+  table {
+    font-size: 0.75rem;
+  }
+  
+  table th, table td {
+    padding: 0.3rem;
+    max-width: 100px;
+  }
+  
+  table th:first-child, table td:first-child {
+    min-width: 40px;
+    max-width: 50px;
+  }
+  
+  table th:nth-child(2), table td:nth-child(2) {
+    min-width: 80px;
+    max-width: 100px;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  #root {
+    padding: 0.5rem;
+  }
+  
+  .top-bar {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+    padding: 1rem;
+    margin: 0 0 1rem 0;
+  }
+  
+  .button-wrapper {
+    justify-content: center;
+  }
+  
+  .button-wrapper button {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+  }
+  
+  .top-bar h1 {
+    font-size: 1.3rem;
+  }
+  
+  .layout-container {
+    padding: 0.5rem;
+  }
+  
+  .page-content {
+    padding: 1rem;
+    margin: 0.5rem auto;
+  }
+  
+  table {
+    font-size: 0.8rem;
+  }
+  
+  table th, table td {
+    padding: 0.3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .top-bar {
+    padding: 0.5rem;
+  }
+  
+  .button-wrapper {
+    gap: 0.3rem;
+  }
+  
+  .button-wrapper button {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.6rem;
+  }
+  
+  .page-content {
+    padding: 0.75rem;
+  }
+  
+  table {
+    font-size: 0.75rem;
+  }
+}
+
+/* Compare Page Specific Styles */
+.compare-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.compare-team-selection {
+  margin-bottom: 2rem;
+}
+
+.compare-team-select {
+  width: 100%;
+  max-width: 400px;
+  padding: 0.75rem;
+  border: 1px solid #4a4a4a;
+  border-radius: 8px;
+  background-color: #2a2a2a;
+  color: #e0e0e0;
+  font-size: 1rem;
+}
+
+.compare-summary-section {
+  margin-top: 2rem;
+}
+
+.compare-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.compare-team-summary {
+  background: linear-gradient(135deg, #3a3a3a, #424242);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #4a4a4a;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.compare-team-summary h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #2563eb;
+  font-weight: 600;
+  text-align: center;
+}
+
+.compare-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #3a3a3a;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #4a4a4a;
+}
+
+.compare-summary-table th {
+  background-color: #2563eb;
+  color: white;
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.compare-summary-table td {
+  padding: 0.5rem;
+  text-align: center;
+  border-bottom: 1px solid #4a4a4a;
+  color: #e0e0e0;
+  font-size: 0.85rem;
+}
+
+.compare-summary-table td:first-child {
+  text-align: left;
+  font-weight: 500;
+}
+
+.compare-charts-section {
+  margin-top: 2rem;
+  max-width: 1400px;
+}
+
+.compare-stat-selection {
+  margin-bottom: 1rem;
+}
+
+.compare-stat-select {
+  padding: 0.5rem;
+  border: 1px solid #4a4a4a;
+  border-radius: 8px;
+  background-color: #2a2a2a;
+  color: #e0e0e0;
+  margin-left: 0.5rem;
+}
+
+/* Responsive design for Compare page */
+@media (max-width: 1200px) {
+  .compare-container {
+    max-width: 100%;
+    padding: 1rem;
+  }
+  
+  .compare-summary-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .compare-summary-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .compare-team-summary {
+    padding: 1rem;
+  }
+  
+  .compare-summary-table th,
+  .compare-summary-table td {
+    padding: 0.4rem 0.3rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* Rankings Page Styles */
+.rankings-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.rankings-info {
+  background: rgba(37, 99, 235, 0.1);
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.rankings-table-container {
+  overflow-x: auto;
+  background: rgba(42, 42, 42, 0.8);
+  border-radius: 12px;
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  margin-bottom: 2rem;
+}
+
+.rankings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.rankings-table thead {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.rankings-table th {
+  padding: 1rem 0.75rem;
+  text-align: center;
+  color: white;
+  font-weight: 600;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+  position: relative;
+}
+
+.rankings-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.rankings-table th.sortable:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.rankings-table td {
+  padding: 0.75rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+}
+
+.rankings-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.rankings-table tbody tr:hover {
+  background-color: rgba(37, 99, 235, 0.1);
+}
+
+.rankings-table tbody tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.rank-cell {
+  font-weight: bold;
+  color: #2563eb;
+  font-size: 1.1rem;
+}
+
+.team-cell {
+  font-size: 1.1rem;
+  color: #60a5fa;
+}
+
+.rankings-legend {
+  background: rgba(42, 42, 42, 0.6);
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.rankings-legend h3 {
+  color: #2563eb;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.scoring-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.scoring-grid span {
+  background: rgba(37, 99, 235, 0.1);
+  padding: 0.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid rgba(37, 99, 235, 0.3);
+}
+
+.rankings-legend p {
+  margin: 0.5rem 0;
+  color: #b0b0b0;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .rankings-table {
+    font-size: 0.8rem;
+  }
+  
+  .rankings-table th,
+  .rankings-table td {
+    padding: 0.5rem 0.25rem;
+  }
+  
+  .scoring-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .rankings-info {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .rankings-table {
+    font-size: 0.7rem;
+  }
+  
+  .rankings-table th,
+  .rankings-table td {
+    padding: 0.4rem 0.2rem;
+  }
+  
+  .scoring-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Unused Matches Table - Same styling as TeamData */
+.unused-matches-table-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: 1rem 0;
+  border-radius: 8px;
+  border: 1px solid #4a4a4a;
+  background-color: #3a3a3a;
+  max-width: 100%;
+}
+
+.unused-matches-table-container table {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  width: auto;
+  min-width: 100%;
+  height: auto;
+  max-height: 500px;
+  overflow-y: auto;
+  display: table;
+  background-color: #3a3a3a;
+}
+
+.unused-matches-table-container table thead {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.unused-matches-table-container table tbody {
+  display: table-row-group;
+}
+
+.unused-matches-table-container table th,
+.unused-matches-table-container table td {
+  white-space: nowrap;
+  min-width: 100px;
+  max-width: none;
+  width: auto;
+  padding: 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid #4a4a4a;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+}
+
+.unused-matches-table-container table th {
+  background-color: #2563eb;
+  color: white;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 11;
+}
+
+.unused-matches-table-container table th:first-child,
+.unused-matches-table-container table td:first-child {
+  min-width: 80px;
+  width: 90px;
+  position: sticky;
+  left: 0;
+  background-color: #3a3a3a;
+  z-index: 15;
+  text-align: center;
+}
+
+.unused-matches-table-container table th:first-child {
+  background-color: #2563eb;
+  z-index: 25;
+}
+
+.unused-matches-table-container table th:nth-child(2),
+.unused-matches-table-container table td:nth-child(2) {
+  min-width: 80px;
+  width: 100px;
+  position: sticky;
+  left: 90px;
+  background-color: #3a3a3a;
+  z-index: 15;
+  text-align: center;
+}
+
+.unused-matches-table-container table th:nth-child(2) {
+  background-color: #2563eb;
+  z-index: 25;
+}
+
+.use-data-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+
+.use-data-checkbox:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.setting-description {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
