@@ -203,3 +203,12 @@ table td[title]:hover {
     max-width: 100px;
   }
 }
+
+/* Statbotics Table: Only first column sticky */
+.statbotics-table-container table th:nth-child(2),
+.statbotics-table-container table td:nth-child(2) {
+  position: static;
+  left: auto;
+  background-color: transparent;
+  z-index: auto;
+}
