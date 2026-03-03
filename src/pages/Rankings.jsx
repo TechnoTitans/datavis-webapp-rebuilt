@@ -243,8 +243,6 @@ function Rankings() {
     return sortOrder === 'desc' ? '↓' : '↑'
   }
 
-  const getRankColor = () => 'transparent'
-
   if (dataLoading) {
     return (
       <div className="rankings-container">
@@ -257,7 +255,7 @@ function Rankings() {
   return (
     <div className="rankings-container">
       <h2>Team Rankings</h2>
-      <div className="rankings-controls" style={{ display: 'flex', gap: '2rem', alignItems: 'center', marginBottom: '1rem' }}>
+      <div className="rankings-controls">
         <Toggle
           label="Show All Attempts (Made + Missed)"
           checked={useAttempts}
@@ -281,7 +279,7 @@ function Rankings() {
                   Team {getSortIcon('teamNumber')}
                 </th>
                 {sortBy !== 'teamNumber' && (
-                  <th onClick={() => handleSort(sortBy)} className="sortable" style={{ backgroundColor: '#4a5568', fontWeight: 'bold' }}>
+                  <th onClick={() => handleSort(sortBy)} className="sortable rankings-current-sort-header">
                     {sortBy === 'avgCycles' && `${useMax ? 'Max' : 'Avg'} Cycles ${getSortIcon('avgCycles')}`}
                     {sortBy === 'avgCoralCycles' && `${useMax ? 'Max' : 'Avg'} Coral Cycles ${getSortIcon('avgCoralCycles')}`}
                     {sortBy === 'avgAlgaeCycles' && `${useMax ? 'Max' : 'Avg'} Algae Cycles ${getSortIcon('avgAlgaeCycles')}`}
@@ -372,25 +370,18 @@ function Rankings() {
             </thead>
             <tbody>
               {sortedTeams.map((team, index) => (
-                <tr key={team.teamNumber} style={{ backgroundColor: getRankColor(index + 1) }}>
+                <tr key={team.teamNumber}>
                   <td className="rank-cell">
                     <strong>#{index + 1}</strong>
                   </td>
                   <td 
-                    className="team-cell" 
+                    className="team-cell team-cell-link" 
                     onClick={() => handleTeamClick(team.teamNumber)}
-                    style={{
-                      cursor: 'pointer',
-                      color: '#4299e1',
-                      textDecoration: 'underline'
-                    }}
-                    onMouseOver={(e) => e.target.style.color = '#63b3ed'}
-                    onMouseOut={(e) => e.target.style.color = '#4299e1'}
                   >
                     <strong>{team.teamNumber}</strong>
                   </td>
                   {sortBy !== 'teamNumber' && (
-                    <td style={{ backgroundColor: '#4a5568', fontWeight: 'bold' }}>
+                    <td className="rankings-current-sort-cell">
                       <strong>
                         {sortBy === 'avgCycles' && team.avgCycles.toFixed(2)}
                         {sortBy === 'avgCoralCycles' && team.avgCoralCycles.toFixed(2)}

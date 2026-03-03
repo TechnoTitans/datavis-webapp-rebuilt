@@ -8,7 +8,6 @@ import PropTypes from 'prop-types'
  */
 const FieldVisualization = ({ autoPath }) => {
   const allianceColor = '#2563eb'
-  const backgroundColor = '#1a1a1a'
 
   // Position mapping based on your SVG coordinates (clockwise from top-left)
   const positions = {
@@ -101,18 +100,9 @@ const FieldVisualization = ({ autoPath }) => {
   }
 
   return (
-    <div style={{ 
-      padding: '20px', 
-      backgroundColor: backgroundColor,
-      borderRadius: '8px',
-      border: `2px solid #4a4a4a`,
-      boxShadow: '0 2px 10px rgba(0, 0, 0, 0.3)'
-    }}>
-      <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-        <svg width="800" height="500" viewBox="0 0 1733 1589" style={{ 
-          border: '1px solid #4a4a4a',
-          borderRadius: '4px'
-        }}>
+    <div className="field-visualization">
+      <div className="field-visualization-canvas">
+        <svg width="800" height="500" viewBox="0 0 1733 1589" className="field-visualization-svg">
           <defs>
             {/* Arrow marker definition */}
             <marker
@@ -183,7 +173,7 @@ const FieldVisualization = ({ autoPath }) => {
             // const gradientIndex = index - 1
 
             return (
-              <>
+              <g key={`seg-${index}`}>
                 <linearGradient
                   id={`arrowGradient-${index}`}
                   x1={prevPosition.x}
@@ -242,19 +232,14 @@ const FieldVisualization = ({ autoPath }) => {
                     )
                   })()
                 )}
-              </>
+              </g>
             )
           })}
         </svg>
       </div>
       
-      <div style={{ 
-        marginTop: '1rem', 
-        textAlign: 'center',
-        color: '#e0e0e0',
-        fontSize: '1rem'
-      }}>
-        <strong style={{ color: allianceColor }}>Auto Path:</strong> {autoPath || 'No path data'}
+      <div className="field-visualization-caption">
+        <strong className="field-visualization-caption-label">Auto Path:</strong> {autoPath || 'No path data'}
       </div>
     </div>
   )

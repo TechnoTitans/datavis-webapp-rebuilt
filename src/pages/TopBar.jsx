@@ -25,18 +25,18 @@ function Layout({ children }) {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/90 backdrop-blur">
-        <div className="mx-auto w-full max-w-6xl px-6 py-4">
+      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/95">
+        <div className="mx-auto w-full max-w-6xl px-6 py-3">
           <div className="grid grid-cols-[auto,1fr,auto] items-center gap-4">
             <NavLink
               to="/"
               onClick={() => setMenuOpen(false)}
-              className="text-xl font-semibold tracking-tight text-foreground"
+              className="text-xl font-semibold tracking-tight text-foreground/95"
             >
               DataVis
             </NavLink>
 
-            <nav className="no-scrollbar hidden min-w-0 items-center gap-1 overflow-x-auto md:flex">
+            <nav className="no-scrollbar hidden min-w-0 items-center gap-1 overflow-x-auto rounded-lg border border-border/70 bg-card/80 p-1 md:flex">
               {navItems.map(item => (
                 <NavLink
                   key={item.to}
@@ -44,9 +44,9 @@ function Layout({ children }) {
                   onClick={() => setMenuOpen(false)}
                   className={({ isActive }) =>
                     [
-                      'whitespace-nowrap rounded-full px-4 py-2 text-[15px] font-medium transition-colors',
+                      'whitespace-nowrap rounded-md px-3 py-2 text-[14px] font-medium',
                       isActive
-                        ? 'bg-primary/15 text-primary'
+                        ? 'border border-primary/25 bg-primary/10 text-primary'
                         : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
                     ].join(' ')
                   }
@@ -56,12 +56,12 @@ function Layout({ children }) {
               ))}
             </nav>
 
-            <div className="hidden shrink-0 items-center gap-3 md:flex">
-              <Badge variant="secondary" className="gap-2 whitespace-nowrap px-4 py-2 text-sm">
+            <div className="hidden shrink-0 items-center gap-2 md:flex">
+              <Badge variant="secondary" className="gap-2 whitespace-nowrap border border-border/70 px-3 py-2 text-sm">
                 <span className={`h-3 w-3 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-red-500'}`} />
                 {isOnline ? 'Online' : 'Offline'}
               </Badge>
-              <Badge variant="outline" className="gap-2 whitespace-nowrap px-4 py-2 text-sm tabular-nums">
+              <Badge variant="outline" className="gap-2 whitespace-nowrap px-3 py-2 text-sm tabular-nums">
                 <span>Pending {pendingCount}</span>
                 <Loader2
                   className={`h-4 w-4 ${syncing ? 'animate-spin opacity-100' : 'opacity-0'}`}
@@ -71,7 +71,7 @@ function Layout({ children }) {
               <Button
                 variant="outline"
                 size="default"
-                className="h-10 px-5 text-sm"
+                className="h-10 border-border/80 px-4 text-sm"
                 onClick={syncNow}
                 disabled={!isOnline || syncing || pendingCount === 0}
                 title={!isOnline ? 'Reconnect to sync' : pendingCount === 0 ? 'No pending changes' : 'Sync now'}
@@ -95,9 +95,9 @@ function Layout({ children }) {
         </div>
 
         {menuOpen ? (
-          <div className="border-t border-border/60 md:hidden">
-            <div className="mx-auto grid max-w-6xl gap-1 px-6 py-4">
-              <div className="flex items-center gap-2 pb-2">
+          <div className="border-t border-border/70 bg-card/90 md:hidden">
+            <div className="mx-auto grid max-w-6xl gap-2 px-6 py-4">
+              <div className="flex items-center gap-2 pb-1">
                 <Badge variant="outline" className="gap-2 whitespace-nowrap tabular-nums">
                   <span>Pending {pendingCount}</span>
                   <Loader2
@@ -127,9 +127,9 @@ function Layout({ children }) {
                     onClick={() => setMenuOpen(false)}
                     className={({ isActive }) =>
                       [
-                        'rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                        'rounded-md px-3 py-2 text-sm font-medium',
                         isActive
-                          ? 'bg-primary/15 text-primary'
+                          ? 'border border-primary/25 bg-primary/10 text-primary'
                           : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
                       ].join(' ')
                     }
@@ -145,8 +145,8 @@ function Layout({ children }) {
         {/* Env warning removed at user request */}
       </header>
 
-      <main className="mx-auto w-full max-w-6xl px-6 py-8">
-        <section className="rounded-2xl border border-border/70 bg-[#0b1220]/70 p-6 shadow-[0_8px_30px_rgba(0,0,0,0.25)] md:p-8">
+      <main className="mx-auto w-full max-w-6xl px-6 py-10">
+        <section className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm md:p-8">
           {children}
         </section>
       </main>

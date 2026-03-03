@@ -42,8 +42,8 @@ const BaseLineChart = ({
   const yDomain = getYDomain ? getYDomain(chartDataByTeam, selectedTeams, dataKey) : [0, 100]
 
   return (
-    <div style={{ marginBottom: '2rem' }}>
-      <h3>{title}</h3>
+    <div className="base-line-chart">
+      <h3 className="base-line-chart-title">{title}</h3>
       <ResponsiveContainer width="100%" height={250}>
         <LineChart margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
           <CartesianGrid strokeDasharray="3 3" />
@@ -60,7 +60,7 @@ const BaseLineChart = ({
             domain={yDomain}
           />
           <Tooltip />
-          <Legend style={{ marginTop: '20px' }} />
+          <Legend />
           {selectedTeams.map((team, i) => (
             <Line
               key={team}

@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import TeamSelector from '../components/TeamSelector'
-import Toggle from '../components/Toggle'
-import Loading from '../components/Loading'
 import StatCharts from '../components/charts/StatCharts'
 import { useTeamData } from '../hooks/useTeamData'
 import { useSelectedTeams, useLocalStorage } from '../hooks/useLocalStorage'
 import { useTeamSummary } from '../hooks/useTeamSummary'
-import { SCORING_LEVELS, CORAL_LEVELS, ALGAE_LEVELS, FIELDS_TO_SHOW } from '../constants/scoring'
+import { FIELDS_TO_SHOW } from '../constants/scoring'
 
 function Compare() {
   const navigate = useNavigate()
@@ -128,8 +126,8 @@ function Compare() {
         )}
       </div>
 
-      <div style={{ marginTop: '1rem' }}>
-        <h2 style={{ marginTop: '2.5rem' }}>Charts for {selectedStat}</h2>
+      <div className="compare-charts-section">
+        <h2 className="compare-charts-title">Charts for {selectedStat}</h2>
         {(() => {
           if (!matchRows || matchRows.length === 0) return <p>No data for chart.</p>;
           if (!selectedStat) return <p>Select a stat to view charts.</p>;
@@ -151,9 +149,9 @@ function Compare() {
         })()}
       </div>
 
-      <div style={{ marginTop: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', marginBottom: '1rem' }}>
-          <h2 style={{ margin: 0 }}>Summaries</h2>
+      <div className="compare-summary-section">
+        <div className="compare-summary-header">
+          <h2 className="compare-summary-title">Summaries</h2>
           <label className="toggle-container">
             <input
               type="checkbox"
@@ -173,7 +171,6 @@ function Compare() {
                   <h3 
                     className="team-header-clickable" 
                     onClick={() => handleTeamClick(team)}
-                    style={{ cursor: 'pointer' }}
                   >
                     Team {team}
                   </h3>

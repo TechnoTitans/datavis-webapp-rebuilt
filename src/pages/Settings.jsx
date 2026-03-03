@@ -4,6 +4,7 @@ import '../styles/settings.css'
 import '../styles/tables.css'
 import { updateMatchUseData } from '../utils/offlineMutations'
 import { toast } from 'sonner'
+import { getCurrentTheme, setThemePreference } from '../lib/theme'
 
 function Settings() {
   const [databaseEditingPerms, setDatabaseEditingPerms] = useState(() => {
@@ -12,6 +13,7 @@ function Settings() {
   const [useAutoData, setUseAutoData] = useState(() => {
     return localStorage.getItem('useAutoData') === 'true'
   })
+  const [isDarkMode, setIsDarkMode] = useState(() => getCurrentTheme() === 'dark')
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [passwordInput, setPasswordInput] = useState('')
   const [pendingToggleValue, setPendingToggleValue] = useState(false)
@@ -25,6 +27,20 @@ function Settings() {
 
   useEffect(() => {
     fetchUnusedMatches()
+  }, [])
+
+  useEffect(() => {
+    const syncTheme = () => {
+      setIsDarkMode(getCurrentTheme() === 'dark')
+    }
+
+    window.addEventListener('themechange', syncTheme)
+    window.addEventListener('storage', syncTheme)
+
+    return () => {
+      window.removeEventListener('themechange', syncTheme)
+      window.removeEventListener('storage', syncTheme)
+    }
   }, [])
 
   const fetchUnusedMatches = async () => {
@@ -65,6 +81,11 @@ function Settings() {
   const handleAutoDataToggle = (checked) => {
     setUseAutoData(checked)
     localStorage.setItem('useAutoData', checked.toString())
+  }
+
+  const handleDarkModeToggle = (checked) => {
+    setThemePreference(checked ? 'dark' : 'light')
+    setIsDarkMode(checked)
   }
 
   const handlePasswordSubmit = () => {
@@ -120,6 +141,25 @@ function Settings() {
     <div>
       <h2>Settings</h2>
       
+      <div className="settings-section">
+        <div className="setting-item">
+          <label className="switch-label">
+            <span>Dark Mode</span>
+            <div className="switch">
+              <input
+                type="checkbox"
+                checked={isDarkMode}
+                onChange={(e) => handleDarkModeToggle(e.target.checked)}
+              />
+              <span className="slider"></span>
+            </div>
+          </label>
+          <p className="setting-description">
+            Enable dark mode for low-light use.
+          </p>
+        </div>
+      </div>
+
       <div className="settings-section">
         <div className="setting-item">
           <label className="switch-label">
@@ -208,7 +248,7 @@ function Settings() {
               <tbody>
                 {unusedMatches.length === 0 ? (
                   <tr>
-                    <td colSpan="100%" style={{ textAlign: 'center', fontStyle: 'italic', color: '#888' }}>
+                    <td colSpan="100%" className="table-empty-state">
                       No unused data.
                     </td>
                   </tr>

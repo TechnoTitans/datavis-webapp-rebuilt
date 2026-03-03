@@ -1,13 +1,20 @@
-import React from 'react'
-
-export default function MultiSelect({ options, selected, onChange, label, style }) {
+export default function MultiSelect({
+  options,
+  selected,
+  onChange,
+  label,
+  style,
+  className = '',
+  labelClassName = '',
+}) {
   return (
-    <div style={style}>
-      <div style={{ fontWeight: 'bold', marginBottom: 8 }}>{label}</div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+    <div className={`multi-select ${className}`.trim()} style={style}>
+      <div className={`multi-select-label ${labelClassName}`.trim()}>{label}</div>
+      <div className="multi-select-options">
         {options.map(opt => (
-          <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <label key={opt} className="multi-select-option">
             <input
+              className="multi-select-checkbox"
               type="checkbox"
               checked={selected.includes(opt)}
               onChange={e => {
@@ -18,7 +25,7 @@ export default function MultiSelect({ options, selected, onChange, label, style 
                 }
               }}
             />
-            <span>{opt}</span>
+            <span className="multi-select-option-text">{opt}</span>
           </label>
         ))}
       </div>

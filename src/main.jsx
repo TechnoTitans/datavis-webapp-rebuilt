@@ -1,12 +1,39 @@
-import { StrictMode } from 'react'
+import { StrictMode, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import { Toaster } from 'sonner'
+import { getCurrentTheme, initializeTheme } from './lib/theme'
+
+const initialTheme = initializeTheme()
+
+export function Root() {
+  const [theme, setTheme] = useState(initialTheme)
+
+  useEffect(() => {
+    const syncTheme = () => {
+      setTheme(getCurrentTheme())
+    }
+
+    window.addEventListener('themechange', syncTheme)
+    window.addEventListener('storage', syncTheme)
+
+    return () => {
+      window.removeEventListener('themechange', syncTheme)
+      window.removeEventListener('storage', syncTheme)
+    }
+  }, [])
+
+  return (
+    <>
+      <App />
+      <Toaster richColors theme={theme === 'dark' ? 'dark' : 'light'} position="top-right" />
+    </>
+  )
+}
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
-    <Toaster richColors theme="dark" position="top-right" />
+    <Root />
   </StrictMode>,
 )

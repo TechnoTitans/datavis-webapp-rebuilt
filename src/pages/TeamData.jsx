@@ -74,7 +74,7 @@ function TeamData() {
         title="Select Teams to View"
       />
 
-      <div style={{ marginTop: '2rem' }}>
+      <div className="team-data-section">
         <h2>Matches for {getTeamDisplayText()}</h2>
         {loading ? (
           <Loading message="Loading matches..." />

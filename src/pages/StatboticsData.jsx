@@ -11,16 +11,7 @@ function StatboticsData() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  const [matches, setMatches] = useState([])
-  const [alliances, setAlliances] = useState([])
-  const [breakdowns, setBreakdowns] = useState([])
-  const [insights, setInsights] = useState(null)
-  const [rankings, setRankings] = useState([])
   const [selectedTeamRows, setSelectedTeamRows] = useState([])
-
-  const [activeTab, setActiveTab] = useState('matches')
-
-  const EVENT_KEY = '2025gagai'
 
   // Fetch all unique teams
   useEffect(() => {
@@ -41,59 +32,6 @@ function StatboticsData() {
 
     fetchTeams()
   }, [])
-
-  // Fetch data (all rows or filtered by selected teams)
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      setError(null)
-
-      const teamNumbers = selectedTeams.map(Number)
-
-      try {
-        let query = supabase
-          .from('statbotics_data')
-          .select(`
-            id,
-            num,
-            team,
-            first_event,
-            rank,
-            unitless_epa,
-            norm_epa,
-            total_epa,
-            auto_epa,
-            teleop_epa,
-            endgame_epa,
-            rp_1_epa,
-            rp_2_epa,
-            rp_3_epa
-          `)
-          .order('num', { ascending: true })
-
-        if (teamNumbers.length > 0) {
-          query = query.in('team', teamNumbers)
-        }
-
-        const { data: rankingData, error: rankingErr } = await query
-
-        if (rankingErr) {
-          console.error(rankingErr)
-          setError('Failed to fetch statbotics data')
-          return
-        }
-
-        setRankings(rankingData || [])
-      } catch (err) {
-        console.error(err)
-        setError('Unexpected error fetching data')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [selectedTeams])
 
   // Fetch raw rows for selected teams to display imported Supabase data
   useEffect(() => {
@@ -137,7 +75,7 @@ function StatboticsData() {
     fetchSelectedRows()
   }, [selectedTeams])
 
-  if (error) return <div style={{ color: 'red', padding: '20px' }}>Error: {error}</div>
+  if (error) return <div className="page-error">Error: {error}</div>
   if (loading) return <Loading />
 
   return (
@@ -159,7 +97,7 @@ function StatboticsData() {
       />
 
       {selectedTeams.length > 0 && (
-        <div className="team-data-container" style={{ marginTop: '2rem' }}>
+        <div className="team-data-container statbotics-team-data">
           {selectedTeams.map(s => {
             const rows = selectedTeamRows.filter(r => String(r.team).trim().toLowerCase() === String(s).trim().toLowerCase())
             if (rows.length === 0) return null
