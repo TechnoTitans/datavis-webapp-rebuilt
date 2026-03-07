@@ -1,78 +1,40 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import TeamSelector from '../components/TeamSelector'
 import Loading from '../components/Loading'
 import { useTeamData } from '../hooks/useTeamData'
 import { useSelectedTeams } from '../hooks/useLocalStorage'
 import MultiSelect from '../components/MultiSelect'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { supabase } from '../supabaseClient'
 
 const ALL_BAR_KEYS = [
-  'Processor',
-  'Net',
-  'L1',
-  'L2',
-  'L3',
-  'L4',
-  'Processor Miss',
-  'Net Miss',
-  'L1 Miss',
-  'L2 Miss',
-  'L3 Miss',
-  'L4 Miss',
+  'L1 Climb',
+  'L2 Climb',
+  'L3 Climb',
+  'Fuel Scored'
 ]
 
 const BAR_COLORS = {
-  Processor: '#FF6B35',
-  Net: '#00D2FF',
-  L1: '#4CAF50',
-  L2: '#FFC107',
-  L3: '#FF9800',
-  L4: '#E91E63',
-  'Processor Miss': '#FFD4C4',
-  'Net Miss': '#B3F4FF',
-  'L1 Miss': '#C8E6C9',
-  'L2 Miss': '#FFF3C4',
-  'L3 Miss': '#FFE0B2',
-  'L4 Miss': '#F8BBD9',
+'L1 Climb': '#00D2FF',
+'L2 Climb': '#4CAF50',
+'L3 Climb': '#FF9800',
+'Fuel Scored': '#E91E63',
 }
 
 const ORDERED_STATS = [
-  { key: 'Net', swatchClass: 'chart-swatch-net' },
-  { key: 'Processor', swatchClass: 'chart-swatch-processor' },
-  { key: 'L4', swatchClass: 'chart-swatch-l4' },
-  { key: 'L3', swatchClass: 'chart-swatch-l3' },
-  { key: 'L2', swatchClass: 'chart-swatch-l2' },
-  { key: 'L1', swatchClass: 'chart-swatch-l1' },
-  { key: 'Net Miss', swatchClass: 'chart-swatch-net-miss' },
-  { key: 'Processor Miss', swatchClass: 'chart-swatch-processor-miss' },
-  { key: 'L4 Miss', swatchClass: 'chart-swatch-l4-miss' },
-  { key: 'L3 Miss', swatchClass: 'chart-swatch-l3-miss' },
-  { key: 'L2 Miss', swatchClass: 'chart-swatch-l2-miss' },
-  { key: 'L1 Miss', swatchClass: 'chart-swatch-l1-miss' },
+  { key: 'L1 Climb', swatchClass: 'chart-swatch-l1' },
+  { key: 'L2 Climb', swatchClass: 'chart-swatch-l2' },
+  { key: 'L3 Climb', swatchClass: 'chart-swatch-l3' },
+  { key: 'Fuel Scored', swatchClass: 'chart-swatch-l4' },
 ]
 
-const MADE_ITEMS = [
-  { value: 'Processor', swatchClass: 'chart-swatch-processor' },
-  { value: 'Net', swatchClass: 'chart-swatch-net' },
-  { value: 'L1', swatchClass: 'chart-swatch-l1' },
-  { value: 'L2', swatchClass: 'chart-swatch-l2' },
-  { value: 'L3', swatchClass: 'chart-swatch-l3' },
-  { value: 'L4', swatchClass: 'chart-swatch-l4' },
-]
-
-const MISSED_ITEMS = [
-  { value: 'Processor Miss', swatchClass: 'chart-swatch-processor-miss' },
-  { value: 'Net Miss', swatchClass: 'chart-swatch-net-miss' },
-  { value: 'L1 Miss', swatchClass: 'chart-swatch-l1-miss' },
-  { value: 'L2 Miss', swatchClass: 'chart-swatch-l2-miss' },
-  { value: 'L3 Miss', swatchClass: 'chart-swatch-l3-miss' },
-  { value: 'L4 Miss', swatchClass: 'chart-swatch-l4-miss' },
-]
 
 function TeamAnalysis() {
   const [selectedTeams, setSelectedTeams] = useSelectedTeams('selectedTeamsAnalysis', [])
   const safeSelectedTeams = Array.isArray(selectedTeams) ? selectedTeams : []
   const { allTeams, matchRows, loading } = useTeamData(safeSelectedTeams)
+  const [statboticsData, setStatboticsData] = useState([])
+  const [statboticsLoading, setStatboticsLoading] = useState(false)
 
   const chartData = {}
   if (matchRows) {
@@ -90,18 +52,19 @@ function TeamAnalysis() {
         team: teamNum,
         matchNumber: parseInt(matchNum) || index + 1,
         endgame: match['Endgame Position']?.toLowerCase() || 'none',
-        L4: match['L4 Count'] || 0,
-        L3: match['L3 Count'] || 0,
-        L2: match['L2 Count'] || 0,
-        L1: match['L1 Count'] || 0,
-        Processor: match['Processor Count'] || 0,
-        Net: match['Net Count'] || 0,
-        'L4 Miss': match['L4 Missed Count'] || 0,
-        'L3 Miss': match['L3 Missed Count'] || 0,
-        'L2 Miss': match['L2 Missed Count'] || 0,
-        'L1 Miss': match['L1 Missed Count'] || 0,
-        'Processor Miss': match['Processor Missed Count'] || 0,
-        'Net Miss': match['Net Missed Count'] || 0,
+        'L1 Climb': match['L1 Climb Count'] || 0,
+        'L2 Climb': match['L2 Climb Count'] || 0,
+        'L3 Climb': match['L3 Climb Count'] || 0,
+        'Fuel Scored': (() => {
+          // Calculate Fuel Scored from Statbotics data: total_epa - endgame_epa
+          // This represents the EPA contribution from autonomous and teleop periods
+          const teamStatboticsData = statboticsData.find(s => String(s.team) === String(teamNum))
+          if (teamStatboticsData && teamStatboticsData.total_epa && teamStatboticsData.endgame_epa) {
+            const fuelScore = teamStatboticsData.total_epa - teamStatboticsData.endgame_epa
+            return Math.max(0, fuelScore) // Ensure non-negative
+          }
+          return 0 // Fallback to 0 if no Statbotics data
+        })(),
       })
     })
 
@@ -110,10 +73,49 @@ function TeamAnalysis() {
     })
   }
 
+  // Fetch Statbotics data for Fuel Scored calculation
+  useEffect(() => {
+    const fetchStatboticsData = async () => {
+      if (!safeSelectedTeams || safeSelectedTeams.length === 0) {
+        setStatboticsData([])
+        return
+      }
+
+      setStatboticsLoading(true)
+
+      // determine whether selected team identifiers are numeric
+      const allNumeric = safeSelectedTeams.every(s => /^\d+$/.test(String(s)))
+      const inValues = allNumeric ? safeSelectedTeams.map(Number) : safeSelectedTeams
+
+      try {
+        const { data, error: fetchErr } = await supabase
+          .from('statbotics_data')
+          .select('team, total_epa, endgame_epa')
+          .in('team', inValues)
+
+        if (fetchErr) {
+          console.error('Error fetching Statbotics data:', fetchErr)
+          setStatboticsData([])
+          return
+        }
+
+        setStatboticsData(data || [])
+      } catch (err) {
+        console.error('Unexpected error fetching Statbotics data:', err)
+        setStatboticsData([])
+      } finally {
+        setStatboticsLoading(false)
+      }
+    }
+
+    fetchStatboticsData()
+  }, [safeSelectedTeams])
+
   const getEndgameLabel = endgame => {
-    if (endgame?.includes('deep') && endgame?.includes('cage')) return 'Deep'
-    if (endgame?.includes('shallow') && endgame?.includes('cage')) return 'Deep'
-    if (endgame?.includes('park')) return 'Park'
+    if (endgame?.includes('L1') ) return 'L1'
+    if (endgame?.includes('L2') ) return 'L2'
+    if (endgame?.includes('L3')) return 'L3'
+    if (endgame?.includes('Park')) return 'Park'
     return 'None'
   }
 
@@ -156,7 +158,7 @@ function TeamAnalysis() {
         />
       </div>
 
-      {loading ? <Loading /> : null}
+      {loading || statboticsLoading ? <Loading /> : null}
 
       {safeSelectedTeams.length === 0 ? (
         <p>Select teams to view analysis.</p>
@@ -228,35 +230,18 @@ function TeamAnalysis() {
                   />
                   <Legend
                     payload={[
-                      { value: 'Processor', type: 'rect', color: '#FF6B35', id: 'Processor' },
-                      { value: 'Net', type: 'rect', color: '#00D2FF', id: 'Net' },
-                      { value: 'L1', type: 'rect', color: '#4CAF50', id: 'L1' },
-                      { value: 'L2', type: 'rect', color: '#FFC107', id: 'L2' },
-                      { value: 'L3', type: 'rect', color: '#FF9800', id: 'L3' },
-                      { value: 'L4', type: 'rect', color: '#E91E63', id: 'L4' },
-                      { value: 'Processor Miss', type: 'rect', color: '#FFD4C4', id: 'Processor Miss' },
-                      { value: 'Net Miss', type: 'rect', color: '#B3F4FF', id: 'Net Miss' },
-                      { value: 'L1 Miss', type: 'rect', color: '#C8E6C9', id: 'L1 Miss' },
-                      { value: 'L2 Miss', type: 'rect', color: '#FFF3C4', id: 'L2 Miss' },
-                      { value: 'L3 Miss', type: 'rect', color: '#FFE0B2', id: 'L3 Miss' },
-                      { value: 'L4 Miss', type: 'rect', color: '#F8BBD9', id: 'L4 Miss' },
+                      { value: 'L1 Climb', type: 'rect', color: '#00D2FF', id: 'L1 Climb' },
+                      { value: 'L2 Climb', type: 'rect', color: '#4CAF50', id: 'L2 Climb' },
+                      { value: 'L3 Climb', type: 'rect', color: '#FF9800', id: 'L3 Climb' },
+                      { value: 'Fuel Scored', type: 'rect', color: '#E91E63', id: 'Fuel Scored' },
                     ]}
                     content={() => (
                       <div className="chart-legend">
                         <ul className="chart-legend-row">
-                          {MADE_ITEMS.map(item => (
-                            <li key={item.value} className="chart-legend-item">
+                          {ORDERED_STATS.map(item => (
+                            <li key={item.value || item.key} className="chart-legend-item">
                               <span className={`chart-swatch ${item.swatchClass}`}></span>
-                              {item.value}
-                            </li>
-                          ))}
-                        </ul>
-
-                        <ul className="chart-legend-row">
-                          {MISSED_ITEMS.map(item => (
-                            <li key={item.value} className="chart-legend-item">
-                              <span className={`chart-swatch ${item.swatchClass}`}></span>
-                              {item.value}
+                              {item.value || item.key}
                             </li>
                           ))}
                         </ul>
@@ -270,9 +255,6 @@ function TeamAnalysis() {
                       dataKey={key}
                       stackId="scoring"
                       fill={BAR_COLORS[key] || '#888'}
-                      stroke={key.includes('Miss') ? '#000' : undefined}
-                      strokeWidth={key.includes('Miss') ? 2 : undefined}
-                      strokeDasharray={key.includes('Miss') ? '6 6' : undefined}
                       name={key}
                     />
                   ))}
