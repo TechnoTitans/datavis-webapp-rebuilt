@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types'
 import BaseLineChart from './BaseLineChart'
+import { parseMatchNumber } from '../../utils/helpers'
 
 // Helper functions for chart data validation and domain calculation
 const hasDataForKey = (chartDataByTeam, selectedTeams, dataKey) => {
@@ -70,6 +71,13 @@ export const MadeChart = ({ chartDataByTeam, selectedTeams }) => (
  * Main StatCharts component that handles data processing and renders all chart types
  */
 const StatCharts = ({ matchRows, selectedTeams, selectedStat }) => {
+  const getRowMatchNumber = (row) => {
+    if (row && typeof row.matchNumber === 'number' && Number.isFinite(row.matchNumber)) {
+      return row.matchNumber
+    }
+    return parseMatchNumber(row?.['Scouting ID'])
+  }
+
   // Build chart data for the selected stat
   const buildStatChartData = (data, field) => {
     const scoringLevels = [
@@ -108,6 +116,7 @@ const StatCharts = ({ matchRows, selectedTeams, selectedStat }) => {
     for (const team in grouped) {
       result[team] = grouped[team].map((row) => {
         let made = 0, missed = 0, hasData = false
+        let directValue = null
 
         if (multiCols) {
           for (const level of multiCols) {
@@ -134,23 +143,26 @@ const StatCharts = ({ matchRows, selectedTeams, selectedStat }) => {
             hasData = true
           }
         }
+        
+        if (!hasData) {
+          const numericValue = row?.[field]
+          if (typeof numericValue === 'number' && !isNaN(numericValue)) {
+            directValue = numericValue
+            made = numericValue
+            hasData = true
+          } else if (typeof numericValue === 'boolean') {
+            directValue = numericValue ? 1 : 0
+            made = directValue
+            hasData = true
+          }
+        }
 
         const attempts = made + missed
-        
-        const getMatchNum = scoutingId => {
-          if (typeof scoutingId === "string") {
-            const parts = scoutingId.split('_')
-            if (parts.length > 2 && !isNaN(Number(parts[2]))) {
-              return Number(parts[2])
-            }
-          }
-          return 0
-        }
-        
+
         return {
-          match: getMatchNum(row["Scouting ID"]),
-          attempts: hasData ? attempts : null,
-          successRate: hasData && attempts > 0 ? (made / attempts) * 100 : null,
+          match: getRowMatchNumber(row),
+          attempts: hasData ? (directValue ?? attempts) : null,
+          successRate: hasData && directValue === null && attempts > 0 ? (made / attempts) * 100 : null,
           made: hasData ? made : null,
           team,
         }
