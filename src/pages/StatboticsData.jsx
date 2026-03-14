@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
 import TeamSelector from '../components/TeamSelector'
 import Loading from '../components/Loading'
@@ -12,6 +12,33 @@ function StatboticsData() {
   const [error, setError] = useState(null)
 
   const [selectedTeamRows, setSelectedTeamRows] = useState([])
+
+  const columns = useMemo(() => {
+    if (!selectedTeamRows || selectedTeamRows.length === 0) return []
+
+    // Build a stable column order based on the first row, while including any extra keys
+    const firstRowKeys = Object.keys(selectedTeamRows[0])
+    const allKeys = new Set(firstRowKeys)
+    selectedTeamRows.forEach(row => Object.keys(row).forEach(k => allKeys.add(k)))
+
+    // Keep firstRowKeys order, then append any extras
+    const extraKeys = Array.from(allKeys).filter(k => !firstRowKeys.includes(k))
+    return [...firstRowKeys, ...extraKeys]
+  }, [selectedTeamRows])
+
+  const headerLabels = useMemo(() => ({
+    r_1: 'Energized_RP_EPA',
+    r_2: 'Supercharged_RP_EPA',
+    r_3: 'Traversal_RP_EPA',
+  }), [])
+
+  const getHeaderLabel = (col) => {
+    const normalized = String(col).toLowerCase()
+    if (normalized === 'r_1' || normalized.includes('r_1')) return headerLabels.r_1
+    if (normalized === 'r_2' || normalized.includes('r_2')) return headerLabels.r_2
+    if (normalized === 'r_3' || normalized.includes('r_3')) return headerLabels.r_3
+    return headerLabels[col] ?? col
+  }
 
   // Fetch all unique teams
   useEffect(() => {
@@ -101,56 +128,42 @@ function StatboticsData() {
           {selectedTeams.map(s => {
             const rows = selectedTeamRows.filter(r => String(r.team).trim().toLowerCase() === String(s).trim().toLowerCase())
             if (rows.length === 0) return null
-            
+
             return (
               <div key={s} className="team-data-table-section">
                 <h3 className="team-header">Team {s}</h3>
                 <div className="team-data-table-container statbotics-table-container">
-                  <div className="table-wrapper">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Num</th>
-                          <th>First Event</th>
-                          <th>Rank</th>
-                          <th>Total EPA</th>
-                          <th>Auto EPA</th>
-                          <th>Teleop EPA</th>
-                          <th>Endgame EPA</th>
-                          <th>Auto RP EPA</th>
-                          <th>Coral RP EPA</th>
-                          <th>Barge RP EPA</th>
-                          <th>Unitless EPA</th>
-                          <th>Norm EPA</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {rows.map((row, idx) => (
-                          <tr key={idx}>
-                            <td>{row.num}</td>
-                            <td>{row.first_event || '—'}</td>
-                            <td>{row.rank || '—'}</td>
-                            <td>{row.total_epa ? row.total_epa.toFixed(2) : '—'}</td>
-                            <td>{row.auto_epa ? row.auto_epa.toFixed(2) : '—'}</td>
-                            <td>{row.teleop_epa ? row.teleop_epa.toFixed(2) : '—'}</td>
-                            <td>{row.endgame_epa ? row.endgame_epa.toFixed(2) : '—'}</td>
-                            <td>{row.rp_1_epa ? row.rp_1_epa.toFixed(2) : '—'}</td>
-                            <td>{row.rp_2_epa ? row.rp_2_epa.toFixed(2) : '—'}</td>
-                            <td>{row.rp_3_epa ? row.rp_3_epa.toFixed(2) : '—'}</td>
-                            <td>{row.unitless_epa ? row.unitless_epa.toFixed(2) : '—'}</td>
-                            <td>{row.norm_epa ? row.norm_epa.toFixed(2) : '—'}</td>
-                          </tr>
+                  <table className="statbotics-table">
+                    <thead>
+                      <tr>
+                        {columns.map(col => (
+                          <th key={col}>{getHeaderLabel(col)}</th>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row, idx) => (
+                        <tr key={idx}>
+                          {columns.map(col => {
+                            const value = row[col]
+                            const display =
+                              value === undefined || value === null
+                                ? '—'
+                                : String(value)
+                            return <td key={col}>{display}</td>
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )
           })}
         </div>
       )}
-      </div>
-    )
-  }
+    </div>
+  )
+}
+
 export default StatboticsData

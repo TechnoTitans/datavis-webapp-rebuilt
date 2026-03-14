@@ -134,6 +134,45 @@ table td[title]:hover {
   background: inherit;
 }
 
+/* Statbotics table should stay in one line and scroll horizontally */
+.statbotics-table {
+  table-layout: auto;
+  width: max-content;
+  min-width: 100%;
+}
+
+.statbotics-table th,
+.statbotics-table td {
+  white-space: nowrap;
+  word-break: normal;
+}
+
+/* Ensure the statbotics section fits the viewport and scrolls internally (inside the container) */
+.statbotics-team-data {
+  max-height: 70vh;
+  overflow: hidden; /* keep scrolling inside the container */
+}
+
+.statbotics-team-data .team-data-table-container {
+  max-height: 60vh;
+  overflow: auto; /* allow both horizontal & vertical scrolling inside the table container */
+  scrollbar-gutter: stable;
+  scrollbar-width: thin; /* Firefox */
+}
+
+.statbotics-team-data .team-data-table-container::-webkit-scrollbar {
+  height: 10px;
+}
+
+.statbotics-team-data .team-data-table-container::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.6);
+  border-radius: 10px;
+}
+
+.statbotics-team-data .team-data-table-container::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.8);
+}
+
 @media (max-width: 1024px) {
   table th,
   table td {
