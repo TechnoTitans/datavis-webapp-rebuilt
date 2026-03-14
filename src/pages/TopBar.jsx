@@ -12,6 +12,7 @@ function Layout({ children }) {
 
   const navItems = [
     { to: '/team-data', label: 'Team Data' },
+    { to: '/qual-data', label: 'Qual Data' },
     { to: '/statbotics-data', label: 'Statbotics Data' },
     { to: '/compare', label: 'Compare' },
     { to: '/team-analysis', label: 'Team Analysis' },

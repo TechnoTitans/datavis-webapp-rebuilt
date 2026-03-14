@@ -4,6 +4,7 @@ import './styles/tables.css'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Layout from './pages/TopBar' // acts as layout wrapper
 import TeamData from './pages/TeamData'
+import QualData from './pages/QualData'
 import StatboticsData from './pages/StatboticsData'
 import Compare from './pages/Compare'
 import Settings from './pages/Settings'
@@ -21,6 +22,7 @@ function App() {
         <Routes>
           <Route path="/" element={<TeamData />} />
           <Route path="/team-data" element={<TeamData />} />
+          <Route path="/qual-data" element={<QualData />} />
           <Route path="/statbotics-data" element={<StatboticsData />} /> {/* Statbotics tab */}
           <Route path="/compare" element={<Compare />} />
           <Route path="/team-analysis" element={<TeamAnalysis />} />
