@@ -175,35 +175,26 @@ function Upload() {
     try {
       const lines = qrText.split('\n').filter(line => line.trim() !== '')
       
-      if (lines.length < 22 || lines[0] !== 'GACMP') {
-        throw new Error('Invalid QR code format')
-      }
-
       const data = {
         'Scouting ID': `${lines[0]}_${lines[1]}_${lines[2]}`,
         'Scouter Name': lines[3],
         'Position': lines[4],
         'Auto Path': lines[5] === 'null' ? null : lines[5],
-        'L4 Count': parseInt(lines[6]),
-        'L4 Missed Count': parseInt(lines[7]),
-        'L3 Count': parseInt(lines[8]),
-        'L3 Missed Count': parseInt(lines[9]),
-        'L2 Count': parseInt(lines[10]),
-        'L2 Missed Count': parseInt(lines[11]),
-        'L1 Count': parseInt(lines[12]),
-        'L1 Missed Count': parseInt(lines[13]),
-        'Processor Count': parseInt(lines[14]),
-        'Processor Missed Count': parseInt(lines[15]),
-        'Net Count': parseInt(lines[16]),
-        'Net Missed Count': parseInt(lines[17]),
-        'Endgame Position': lines[18],
-        'Is Ground Coral?': lines[19] === 'true',
-        'Is Ground Algae?': lines[20] === 'true',
-        'Driver Quality': 0,
-        'Mechanical Reliability': lines[21] === 'true' ? 0 : 5,
-        'Defense Ability': parseInt(lines[22]),
-        'Algae Descorability': 0,
-        'Notes': lines[23],
+        'Shot While Moving': lines[6] === 'true',
+        'Shot Coordinates': lines[7],
+        'Pin Rating': parseInt(lines[8]),
+        'Steal Rating': parseInt(lines[9]),
+        'Block Rating': parseInt(lines[10]),
+        'Ram Rating': parseInt(lines[11]),
+        'AntiPin Rating': parseInt(lines[12]),
+        'AntiSteal Rating': parseInt(lines[13]),
+        'AntiBlock Rating': parseInt(lines[14]),
+        'AntiRam Rating': parseInt(lines[15]),
+        'Endgame Climb': lines[16],
+        'Bump?': lines[17] === 'true',
+        'Trench?': lines[18] === 'true',
+        'Penalties?': lines[19] === 'true',
+        'Notes': lines[20],
         'Use Data': true,
         _teamNumber: parseInt(lines[1]),
         _matchNumber: parseInt(lines[2])

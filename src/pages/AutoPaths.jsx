@@ -5,363 +5,235 @@ import Loading from '../components/Loading'
 import FieldVisualization from '../components/FieldVisualization'
 import { useTeamData } from '../hooks/useTeamData'
 import { useSelectedTeams } from '../hooks/useLocalStorage'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { parseAutoPath } from '../utils/autoPathParser'
 import '../index.css'
-import MultiSelect from '../components/MultiSelect'
-
-const ALL_BAR_KEYS = [
-  'Processor',
-  'Net',
-  'L1',
-  'L2',
-  'L3',
-  'L4',
-  'Processor Miss',
-  'Net Miss',
-  'L1 Miss',
-  'L2 Miss',
-  'L3 Miss',
-  'L4 Miss',
-]
-
-const BAR_COLORS = {
-  Processor: '#FF6B35',
-  Net: '#00D2FF',
-  L1: '#4CAF50',
-  L2: '#FFC107',
-  L3: '#FF9800',
-  L4: '#E91E63',
-  'Processor Miss': '#FFD4C4',
-  'Net Miss': '#B3F4FF',
-  'L1 Miss': '#C8E6C9',
-  'L2 Miss': '#FFF3C4',
-  'L3 Miss': '#FFE0B2',
-  'L4 Miss': '#F8BBD9',
-}
-
-const ORDERED_STATS = [
-  { key: 'Net', swatchClass: 'chart-swatch-net' },
-  { key: 'Processor', swatchClass: 'chart-swatch-processor' },
-  { key: 'L4', swatchClass: 'chart-swatch-l4' },
-  { key: 'L3', swatchClass: 'chart-swatch-l3' },
-  { key: 'L2', swatchClass: 'chart-swatch-l2' },
-  { key: 'L1', swatchClass: 'chart-swatch-l1' },
-  { key: 'Net Miss', swatchClass: 'chart-swatch-net-miss' },
-  { key: 'Processor Miss', swatchClass: 'chart-swatch-processor-miss' },
-  { key: 'L4 Miss', swatchClass: 'chart-swatch-l4-miss' },
-  { key: 'L3 Miss', swatchClass: 'chart-swatch-l3-miss' },
-  { key: 'L2 Miss', swatchClass: 'chart-swatch-l2-miss' },
-  { key: 'L1 Miss', swatchClass: 'chart-swatch-l1-miss' },
-]
-
-const MADE_ITEMS = [
-  { value: 'Processor', swatchClass: 'chart-swatch-processor' },
-  { value: 'Net', swatchClass: 'chart-swatch-net' },
-  { value: 'L1', swatchClass: 'chart-swatch-l1' },
-  { value: 'L2', swatchClass: 'chart-swatch-l2' },
-  { value: 'L3', swatchClass: 'chart-swatch-l3' },
-  { value: 'L4', swatchClass: 'chart-swatch-l4' },
-]
-
-const MISSED_ITEMS = [
-  { value: 'Processor Miss', swatchClass: 'chart-swatch-processor-miss' },
-  { value: 'Net Miss', swatchClass: 'chart-swatch-net-miss' },
-  { value: 'L1 Miss', swatchClass: 'chart-swatch-l1-miss' },
-  { value: 'L2 Miss', swatchClass: 'chart-swatch-l2-miss' },
-  { value: 'L3 Miss', swatchClass: 'chart-swatch-l3-miss' },
-  { value: 'L4 Miss', swatchClass: 'chart-swatch-l4-miss' },
-]
 
 function AutoPaths() {
-  const navigate = useNavigate()
-  const [viewMode, setViewMode] = useState('stats')
-  const [currentPathIndex, setCurrentPathIndex] = useState({})
-  const [selectedBarKeys, setSelectedBarKeys] = useState(ALL_BAR_KEYS)
-
-  const [selectedTeams, setSelectedTeams] = useSelectedTeams('selectedTeamsAutoPaths', [])
-  const safeSelectedTeams = Array.isArray(selectedTeams) ? selectedTeams : []
-  const { allTeams, matchRows, loading } = useTeamData(safeSelectedTeams, true)
-
-  const chartData = {}
-  if (matchRows) {
-    matchRows.forEach((match, index) => {
-      const scoutingIdParts = match['Scouting ID']?.split('_') || []
-      const teamNum = scoutingIdParts[1] || 'Unknown'
-      const matchNum = scoutingIdParts[2] || index + 1
-      if (!chartData[teamNum]) chartData[teamNum] = []
-      const autoPath = match['Auto Path'] || ''
-      const parsedAutoData = parseAutoPath(autoPath)
-      chartData[teamNum].push({
-        match: `Match ${matchNum}`,
-        team: teamNum,
-        matchNumber: parseInt(matchNum) || index + 1,
-        autoPath,
-        L4: parsedAutoData.L4 || 0,
-        L3: parsedAutoData.L3 || 0,
-        L2: parsedAutoData.L2 || 0,
-        L1: parsedAutoData.L1 || 0,
-        Processor: parsedAutoData.Processor || 0,
-        Net: parsedAutoData.Net || 0,
-        'L4 Miss': parsedAutoData.L4_missed || 0,
-        'L3 Miss': parsedAutoData.L3_missed || 0,
-        'L2 Miss': parsedAutoData.L2_missed || 0,
-        'L1 Miss': parsedAutoData.L1_missed || 0,
-        'Processor Miss': parsedAutoData.Processor_missed || 0,
-        'Net Miss': parsedAutoData.Net_missed || 0,
-        opponentLeft: parsedAutoData.opponentLeft,
-        coralStations: parsedAutoData.coralStations,
-        parsedData: parsedAutoData,
-        position: parsedAutoData.position,
-      })
-    })
-
-    Object.keys(chartData).forEach(teamNum => {
-      chartData[teamNum].sort((a, b) => a.matchNumber - b.matchNumber)
-      if (!(teamNum in currentPathIndex)) {
-        setCurrentPathIndex(prev => ({ ...prev, [teamNum]: 0 }))
-      }
-    })
+  const coords = {
+    O: { x: 250, y: 305},
+    D: { x: 100, y: 150 },
+    R: { x: 158, y: 295 },
+    L: { x: 158, y: 370 },
+    C: { x: 158, y: 330 },
+    N: { x: 670, y: 305 },
+    S: { x: 300, y: 305 },
+    F: { x: 140, y: 580 },
+  }
+  const [selectedMatchNumber, setSelectedMatchNumber] = useState({})
+  const handleMatchNumberChange = (team, matchNum) => {
+    setSelectedMatchNumber(prev => ({ ...prev, [team]: matchNum }))
+  }
+  const getAutonPath = (team) => {
+    const matchNum = selectedMatchNumber[team];
+    if (!matchNum) return [];
+    const row = matchRows.find(r => {
+      const scoutingId = r['Scouting ID'];
+      const parts = scoutingId.split('_');
+      return parts.length > 2 && Number(parts[1]) === Number(team) && Number(parts[2]) === Number(matchNum);
+    });
+    if (!row || !row['Auto Path']) return [];
+    const pathStr = row['Auto Path'];
+    let pathArr = pathStr.split('').map(l => l.trim()).filter(l => coords[l]);
+    if (pathArr.length === 0 || pathArr[0] !== 'O') {
+      pathArr = ['O', ...pathArr];
+    }
+    return pathArr;
   }
 
-  const handleTeamToggle = teamNumber => {
-    const teamStr = String(teamNumber)
-    setSelectedTeams(prev => {
-      const prevArray = Array.isArray(prev) ? prev : []
-      if (prevArray.includes(teamStr)) {
-        return prevArray.filter(t => t !== teamStr)
+  const renderArrows = () => {
+    if (!safeSelectedTeams.length) return null
+    const team = safeSelectedTeams[0]
+    const path = getAutonPath(team)
+    if (path.length < 2) return null
+
+
+    const adjustedCoords = { ...coords }
+    if (path.some(l => l === 'D' || l === 'R')) {
+      adjustedCoords['S'] = { ...adjustedCoords['S'], y: adjustedCoords['S'].y - 90 }
+      adjustedCoords['N'] = { ...adjustedCoords['N'], y: adjustedCoords['N'].y - 90 }
+    }
+    if (path.some(l => l === 'F' || l === 'L')) {
+      adjustedCoords['S'] = { ...adjustedCoords['S'], y: adjustedCoords['S'].y + 90 }
+      adjustedCoords['N'] = { ...adjustedCoords['N'], y: adjustedCoords['N'].y + 90 }
+    }
+
+    const arrows = [];
+    const seenPaths = new Set();
+
+    for (let i = 0; i < path.length - 1; i++) {
+      const start = adjustedCoords[path[i]]
+      const end = adjustedCoords[path[i + 1]]
+      const pathKey = `${path[i]}-${path[i + 1]}`;
+      const reversePathKey = `${path[i + 1]}-${path[i]}`;
+
+      const opacity = (i + 1) / (path.length - 1);
+      const markerId = `arrowhead-${i}`;
+
+      if (seenPaths.has(pathKey) || seenPaths.has(reversePathKey)) {
+        const midX = (start.x + end.x) / 2
+        const midY = (start.y + end.y) / 2 - 30;
+        arrows.push(
+          <>
+            <defs key={`defs-${i}`}>
+              <marker
+                id={markerId}
+                markerWidth="10"
+                markerHeight="7"
+                refX="10"
+                refY="3.5"
+                orient="auto"
+                markerUnits="strokeWidth"
+              >
+                <polygon points="0 0, 10 3.5, 0 7" fill={`rgba(0, 255, 0, ${opacity})`} />
+              </marker>
+            </defs>
+            <path
+              key={i}
+              d={`M ${start.x},${start.y} Q ${midX},${midY} ${end.x},${end.y}`}
+              stroke={`rgba(0, 255, 0, ${opacity})`}
+              strokeWidth="4"
+              fill="none"
+              markerEnd={`url(#${markerId})`}
+            />
+          </>
+        );
+      } else {
+        arrows.push(
+          <>
+            <defs key={`defs-${i}`}>
+              <marker
+                id={markerId}
+                markerWidth="10"
+                markerHeight="7"
+                refX="10"
+                refY="3.5"
+                orient="auto"
+                markerUnits="strokeWidth"
+              >
+                <polygon points="0 0, 10 3.5, 0 7" fill={`rgba(0, 255, 0, ${opacity})`} />
+              </marker>
+            </defs>
+            <line
+              key={i}
+              x1={start.x}
+              y1={start.y}
+              x2={end.x}
+              y2={end.y}
+              stroke={`rgba(0, 255, 0, ${opacity})`}
+              strokeWidth="4"
+              markerEnd={`url(#${markerId})`}
+            />
+          </>
+        );
+        seenPaths.add(pathKey);
       }
-      return [...prevArray, teamStr]
-    })
+    }
+
+    const circles = path.filter((l) => l !== 'O').map((l, idx) => (
+      <circle key={l+idx} cx={adjustedCoords[l].x} cy={adjustedCoords[l].y} r="18" fill="orange" />
+    ))
+    const labels = path.filter((l) => l !== 'O').map((l, idx) => (
+      <text
+        key={l+"label"}
+        x={adjustedCoords[l].x}
+        y={adjustedCoords[l].y + 5}
+        textAnchor="middle"
+        fontSize="18"
+        fill="black"
+      >
+        {l}
+      </text>
+    ))
+
+    return [
+      ...arrows,
+      ...circles,
+      ...labels,
+    ];
+  }
+  
+  const navigate = useNavigate()
+  const [selectedTeams, setSelectedTeams] = useSelectedTeams('selectedTeamsAutoPaths', [])
+  const safeSelectedTeams = Array.isArray(selectedTeams) ? selectedTeams : []
+  
+  const dummyTeams = safeSelectedTeams.length > 0 ? safeSelectedTeams : ['0']
+  const { allTeams, matchRows: allMatchRows, loading } = useTeamData(dummyTeams, true)
+  
+  const matchRows = safeSelectedTeams.length > 0 
+    ? allMatchRows.filter(row => safeSelectedTeams.includes(Number(row['Team Number'])))
+    : allMatchRows
+
+  const handleTeamToggle = (team) => {
+    const teamNum = Number(team);
+    if (safeSelectedTeams.includes(teamNum)) {
+      setSelectedTeams([]);
+      setSelectedMatchNumber({});
+    } else {
+      setSelectedTeams([teamNum]);
+      setSelectedMatchNumber({ [teamNum]: null });
+    }
   }
 
   const clearAllTeams = () => {
     setSelectedTeams([])
-    setCurrentPathIndex({})
-  }
-
-  const handleTeamClick = teamNumber => {
-    localStorage.setItem('selectedTeamsAnalysis', JSON.stringify([String(teamNumber)]))
-    navigate('/team-analysis')
-  }
-
-  const handleNextPath = teamNum => {
-    setCurrentPathIndex(prev => {
-      const teamPaths = chartData[teamNum] || []
-      const currentIndex = prev[teamNum] || 0
-      const nextIndex = currentIndex + 1 < teamPaths.length ? currentIndex + 1 : 0
-      return { ...prev, [teamNum]: nextIndex }
-    })
-  }
-
-  const handlePrevPath = teamNum => {
-    setCurrentPathIndex(prev => {
-      const teamPaths = chartData[teamNum] || []
-      const currentIndex = prev[teamNum] || 0
-      const prevIndex = currentIndex > 0 ? currentIndex - 1 : teamPaths.length - 1
-      return { ...prev, [teamNum]: prevIndex }
-    })
   }
 
   return (
-    <div className="auto-paths-container">
-      <h1>Auto Paths</h1>
-
-      <TeamSelector
-        allTeams={allTeams || []}
-        selectedTeams={safeSelectedTeams}
-        onTeamToggle={handleTeamToggle}
-        onClearAll={clearAllTeams}
-        title="Select Teams for Auto Path Analysis"
-      />
-
-      <div className="auto-view-mode">
-        <label className="auto-view-option">
-          <input
-            type="radio"
-            name="viewMode"
-            value="stats"
-            checked={viewMode === 'stats'}
-            onChange={e => setViewMode(e.target.value)}
-          />
-          <span className="auto-view-label">Stats Mode</span>
-        </label>
-        <label className="auto-view-option">
-          <input
-            type="radio"
-            name="viewMode"
-            value="visualization"
-            checked={viewMode === 'visualization'}
-            onChange={e => setViewMode(e.target.value)}
-          />
-          <span className="auto-view-label">Visualization Mode</span>
-        </label>
+    <div>
+      <div style={{ marginBottom: '16px', textAlign: 'center' }}>
       </div>
+      <div className="auto-paths-container">
+        <h1>Auto Paths</h1>
 
-      {viewMode === 'stats' ? (
-        <div className="multi-select-section">
-          <MultiSelect
-            options={ALL_BAR_KEYS}
-            selected={selectedBarKeys}
-            onChange={setSelectedBarKeys}
-            label="Select Bars to Display"
-            className="multi-select-panel"
-          />
+        <TeamSelector
+          allTeams={allTeams || []}
+          selectedTeams={safeSelectedTeams}
+          onTeamToggle={handleTeamToggle}
+          onClearAll={clearAllTeams}
+          title="Select Team"
+        />
+
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '8px', marginBottom: '10px'}}>
+          <strong>Select Match Number:</strong>
+          {safeSelectedTeams.length === 1 && (() => {
+            const team = safeSelectedTeams[0];
+            const teamMatches = matchRows.filter(row => String(row['Scouting ID'].split('_')[1]) === String(team));
+            const matchNumbers = teamMatches.map(row => {
+              const scoutingId = row['Scouting ID'];
+              const parts = scoutingId.split('_');
+              return parts.length > 2 ? Number(parts[2]) : null;
+            }).filter(num => num !== null);
+            const uniqueMatchNumbers = [...new Set(matchNumbers)].sort((a, b) => a - b);
+            const currentMatch = selectedMatchNumber[team];
+            return (
+              <div key={team} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ color: "white" }}>Team {team}:</span>
+                <select
+                  value={currentMatch || ''}
+                  onChange={e => handleMatchNumberChange(team, e.target.value === '' ? null : Number(e.target.value))}
+                  style={{ color: "black", backgroundColor: "white" }}
+                >
+                  <option value="">None</option>
+                  {uniqueMatchNumbers.map(num => (
+                    <option key={num} value={num}>Match {num}</option>
+                  ))}
+                </select>
+              </div>
+            );
+          })()}
         </div>
-      ) : null}
 
-      {loading ? (
-        <Loading message="Loading team data..." />
-      ) : (
-        <div className="auto-content-section">
-          {safeSelectedTeams.length === 0 ? (
-            <p className="empty-state-message">
-              Select teams to view auto path {viewMode === 'stats' ? 'statistics' : 'visualizations'}.
-            </p>
-          ) : Object.keys(chartData).length === 0 ? (
-            <p className="empty-state-message">No auto path data found for selected teams.</p>
-          ) : viewMode === 'stats' ? (
-            <div className="charts-container">
-              {Object.entries(chartData).map(([teamNum, teamMatches]) => (
-                <div key={teamNum} className="chart-container">
-                  <h3 className="chart-team-title">Team {teamNum}</h3>
-                  <ResponsiveContainer width="100%" height={500}>
-                    <BarChart
-                      data={teamMatches}
-                      margin={{
-                        top: 20,
-                        right: 30,
-                        left: 20,
-                        bottom: 80,
-                      }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                      <XAxis
-                        dataKey="match"
-                        stroke="#cbd5e1"
-                        angle={-45}
-                        textAnchor="end"
-                        height={80}
-                        tick={{ fontSize: 12 }}
-                      />
-                      <YAxis stroke="#cbd5e1" allowDecimals={false} />
-                      <Tooltip
-                        content={({ active, payload, label }) => {
-                          if (!(active && payload && payload.length)) return null
-
-                          const data = payload[0].payload
-                          return (
-                            <div className="chart-tooltip">
-                              <p className="chart-tooltip-title">{label}</p>
-                              <p className="chart-tooltip-subtitle">Path: {data.autoPath || 'No data'}</p>
-                              {data.opponentLeft ? <p className="chart-tooltip-alert">Leave</p> : null}
-                              {ORDERED_STATS.map(stat => {
-                                const value = data[stat.key]
-                                if (value > 0) {
-                                  return (
-                                    <div key={stat.key} className="chart-tooltip-row">
-                                      <span className={`chart-swatch ${stat.swatchClass}`}></span>
-                                      <span>{stat.key}: {value}</span>
-                                    </div>
-                                  )
-                                }
-                                return null
-                              })}
-                            </div>
-                          )
-                        }}
-                      />
-                      <Legend
-                        payload={[
-                          { value: 'Processor', type: 'rect', color: '#FF6B35', id: 'Processor' },
-                          { value: 'Net', type: 'rect', color: '#00D2FF', id: 'Net' },
-                          { value: 'L1', type: 'rect', color: '#4CAF50', id: 'L1' },
-                          { value: 'L2', type: 'rect', color: '#FFC107', id: 'L2' },
-                          { value: 'L3', type: 'rect', color: '#FF9800', id: 'L3' },
-                          { value: 'L4', type: 'rect', color: '#E91E63', id: 'L4' },
-                          { value: 'Processor Miss', type: 'rect', color: '#FFD4C4', id: 'Processor Miss' },
-                          { value: 'Net Miss', type: 'rect', color: '#B3F4FF', id: 'Net Miss' },
-                          { value: 'L1 Miss', type: 'rect', color: '#C8E6C9', id: 'L1 Miss' },
-                          { value: 'L2 Miss', type: 'rect', color: '#FFF3C4', id: 'L2 Miss' },
-                          { value: 'L3 Miss', type: 'rect', color: '#FFE0B2', id: 'L3 Miss' },
-                          { value: 'L4 Miss', type: 'rect', color: '#F8BBD9', id: 'L4 Miss' },
-                        ]}
-                        content={() => (
-                          <div className="chart-legend">
-                            <ul className="chart-legend-row">
-                              {MADE_ITEMS.map(item => (
-                                <li key={item.value} className="chart-legend-item">
-                                  <span className={`chart-swatch ${item.swatchClass}`}></span>
-                                  {item.value}
-                                </li>
-                              ))}
-                            </ul>
-
-                            <ul className="chart-legend-row">
-                              {MISSED_ITEMS.map(item => (
-                                <li key={item.value} className="chart-legend-item">
-                                  <span className={`chart-swatch ${item.swatchClass}`}></span>
-                                  {item.value}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      />
-                      {selectedBarKeys.map(key => (
-                        <Bar
-                          key={key}
-                          dataKey={key}
-                          stackId="scoring"
-                          fill={BAR_COLORS[key] || '#888'}
-                          stroke={key.includes('Miss') ? '#000' : undefined}
-                          strokeWidth={key.includes('Miss') ? 2 : undefined}
-                          strokeDasharray={key.includes('Miss') ? '6 6' : undefined}
-                          name={key}
-                        />
-                      ))}
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="visualization-container">
-              {Object.entries(chartData).map(([teamNum, teamMatches]) => {
-                const currentIndex = currentPathIndex[teamNum] || 0
-                const currentPath = teamMatches[currentIndex] || {}
-                return (
-                  <div key={teamNum} className="visualization-card">
-                    <h2 className="visualization-card-title" onClick={() => handleTeamClick(teamNum)}>
-                      Team {teamNum}
-                    </h2>
-                    <div className="visualization-nav">
-                      <button
-                        onClick={() => handlePrevPath(teamNum)}
-                        disabled={teamMatches.length <= 1}
-                        className="visualization-nav-btn"
-                      >
-                        ← Previous
-                      </button>
-                      <span className="visualization-nav-status">
-                        {currentPath.match} ({currentIndex + 1} of {teamMatches.length})
-                      </span>
-                      <button
-                        onClick={() => handleNextPath(teamNum)}
-                        disabled={teamMatches.length <= 1}
-                        className="visualization-nav-btn"
-                      >
-                        Next →
-                      </button>
-                    </div>
-                    <FieldVisualization autoPath={currentPath.autoPath} />
-                  </div>
-                )
-              })}
-            </div>
-          )}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '600px' }}>
+          <div style={{ position: 'relative', width: '800px', height: '750px' }}>
+            <img src="src/assets/rebuiltauton.png" alt="Background" style={{ width: '100%', height: '100%' }} />
+            <svg
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+              viewBox="0 0 800 600"
+            >
+              {renderArrows()}
+            </svg>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }

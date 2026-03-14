@@ -47,42 +47,36 @@ export const useTeamData = (selectedTeams = [], useDataOnly = false) => {
       setLoading(false)
       return
     }
-    if (!selectedTeams || selectedTeams.length === 0) {
-      setMatchRows([])
-      return
-    }
-
     setLoading(true)
     try {
       let query = supabase.from('match_data').select('*')
-      
       if (useDataOnly) {
         query = query.eq("Use Data", true)
       }
-
       const { data, error } = await query
-
       if (error) {
         console.error('Error fetching match data:', error)
-        // Avoid blocking UI; pages can show their own warnings.
         return
       }
-
-      // Filter and sort rows
       let filteredRows = []
-      for (const row of data) {
-        const teamNumber = parseTeamNumber(row["Scouting ID"])
-        if (teamNumber && selectedTeams.includes(String(teamNumber))) {
-          filteredRows.push({ ...row, team: String(teamNumber) })
+      if (!selectedTeams || selectedTeams.length === 0) {
+        // If no teams selected, return all rows
+        filteredRows = data.map(row => {
+          const teamNumber = parseTeamNumber(row["Scouting ID"]);
+          return { ...row, team: String(teamNumber), "Team Number": teamNumber };
+        });
+      } else {
+        for (const row of data) {
+          const teamNumber = parseTeamNumber(row["Scouting ID"]);
+          if (teamNumber && selectedTeams.includes(teamNumber)) {
+            filteredRows.push({ ...row, team: String(teamNumber), "Team Number": teamNumber });
+          }
         }
       }
-
-      // Sort by team, then by match number
       filteredRows.sort((a, b) => {
         if (a.team !== b.team) return Number(a.team) - Number(b.team)
         return parseMatchNumber(a["Scouting ID"]) - parseMatchNumber(b["Scouting ID"])
       })
-
       setMatchRows(filteredRows)
     } catch (error) {
       console.error('Error in fetchMatches:', error)
