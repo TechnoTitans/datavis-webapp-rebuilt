@@ -159,7 +159,7 @@ function AutoPaths() {
   const { allTeams, matchRows: allMatchRows, loading } = useTeamData(dummyTeams, true)
   
   const matchRows = safeSelectedTeams.length > 0 
-    ? allMatchRows.filter(row => safeSelectedTeams.includes(Number(row['Team Number'])))
+    ? allMatchRows.filter(row => safeSelectedTeams.includes(Number(row['Scouting ID'].split("_")[1])))
     : allMatchRows
 
   const handleTeamToggle = (team) => {
@@ -224,7 +224,7 @@ function AutoPaths() {
 
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '600px' }}>
           <div style={{ position: 'relative', width: '800px', height: '750px' }}>
-            <img src="public/rebuiltauton.png" alt="Background" style={{ width: '100%', height: '100%' }} />
+            <img src="src/assets/rebuiltauton.png" alt="Background" style={{ width: '100%', height: '100%' }} />
             <svg
               style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
               viewBox="0 0 800 600"

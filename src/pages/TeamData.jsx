@@ -8,17 +8,10 @@ import { toast } from 'sonner'
 
 function TeamData() {
   const [selectedTeams, setSelectedTeams] = useSelectedTeams('selectedTeamsData', [])
-  const { allTeams, matchRows, loading, setMatchRows } = useTeamData(selectedTeams, false)
+  const {allTeams, matchRows, loading, fetchAllTeams, fetchMatches, reloadData, setMatchRows} = useTeamData(selectedTeams, false)
 
   const handleTeamToggle = (teamNumber) => {
-    const teamStr = String(teamNumber)
-    setSelectedTeams(prev => {
-      if (prev.includes(teamStr)) {
-        return prev.filter(t => t !== teamStr)
-      } else {
-        return [...prev, teamStr]
-      }
-    })
+    setSelectedTeams([teamNumber])
   }
 
   const clearAllTeams = () => {
@@ -83,7 +76,7 @@ function TeamData() {
         ) : (
           <div className="team-data-container">
             {selectedTeams.map(team => {
-              const teamRows = matchRows.filter(row => row.team === team)
+              const teamRows = matchRows.filter(row => String(row.team) === String(team))
               if (teamRows.length === 0) return null
               
               return (
