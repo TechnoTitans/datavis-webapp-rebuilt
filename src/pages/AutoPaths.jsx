@@ -224,7 +224,7 @@ function AutoPaths() {
 
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '600px' }}>
           <div style={{ position: 'relative', width: '800px', height: '750px' }}>
-            <img src="src/assets/rebuiltauton.png" alt="Background" style={{ width: '100%', height: '100%' }} />
+            <img src="public/rebuiltauton.png" alt="Background" style={{ width: '100%', height: '100%' }} />
             <svg
               style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
               viewBox="0 0 800 600"
