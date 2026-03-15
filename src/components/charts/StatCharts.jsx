@@ -89,6 +89,9 @@ const StatCharts = ({ matchRows, selectedTeams, selectedStat }) => {
       { made: 'Net Count', missed: 'Net Missed Count' },
     ]
     
+    const ratingFields = ['Pin', 'Ram', 'Block', 'Steal', 'Anti Pin', 'Anti Ram', 'Anti Block', 'Anti Steal']
+    const isRatingField = ratingFields.includes(field)
+    
     let madeCol = null, missedCol = null, multiCols = null
     
     if (field === 'Total Cycles') {
@@ -97,7 +100,7 @@ const StatCharts = ({ matchRows, selectedTeams, selectedStat }) => {
       multiCols = scoringLevels.slice(0, 4) // L4, L3, L2, L1
     } else if (field === 'Algae Cycles') {
       multiCols = scoringLevels.slice(4) // Processor, Net
-    } else {
+    } else if (!isRatingField) {
       const found = scoringLevels.find(level => level.made === field)
       if (found) {
         madeCol = found.made
@@ -140,6 +143,15 @@ const StatCharts = ({ matchRows, selectedTeams, selectedStat }) => {
           }
           if (typeof vMissed === 'number' && !isNaN(vMissed)) {
             missed = vMissed
+            hasData = true
+          }
+        } else if (isRatingField) {
+          const normalizedFieldName = field.replace(/\s+/g, '')
+          const dbColumnName = `${normalizedFieldName} Rating`
+          const numericValue = row?.[dbColumnName]
+          if (typeof numericValue === 'number' && !isNaN(numericValue)) {
+            directValue = numericValue
+            made = numericValue
             hasData = true
           }
         }

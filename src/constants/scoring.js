@@ -1,3 +1,6 @@
+// Event configuration
+export const EVENT_KEY = '2026GAGWI'
+
 // Scoring level configurations
 export const SCORING_LEVELS = [
   { made: 'L4 Count', missed: 'L4 Missed Count' },

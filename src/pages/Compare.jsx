@@ -7,6 +7,7 @@ import { useSelectedTeams, useLocalStorage } from '../hooks/useLocalStorage'
 import { useTeamSummary } from '../hooks/useTeamSummary'
 import { useCompareData } from '../hooks/useCompareData'
 import { supabaseConfigured } from '../supabaseClient'
+import { EVENT_KEY } from '../constants/scoring'
 
 const SOURCE_OPTIONS = [
   { value: 'combined', label: 'Combined (Scouter + TBA)' },
@@ -41,6 +42,17 @@ const PRIMARY_ACTION_FIELDS = [
 ]
 
 const EXTRA_ACTION_FIELDS = ['Penalties', 'Bump', 'Trench', 'Broke Down']
+
+const RATING_FIELDS = [
+  'Pin',
+  'Ram',
+  'Block',
+  'Steal',
+  'Anti Pin',
+  'Anti Ram',
+  'Anti Block',
+  'Anti Steal',
+]
 
 const getSummaryMetric = (teamSummary, fieldName) => {
   return teamSummary?.[fieldName] || null
@@ -82,6 +94,92 @@ const formatMetricSummary = (metric) => {
   return `${metric.value} (${metric.percent}%)`
 }
 
+const fetchTeamOPR = async (teamNumber) => {
+  try {
+    const apiKey = import.meta.env.VITE_TBA_API_KEY
+    if (!apiKey) {
+      console.warn('VITE_TBA_API_KEY not set')
+      return null
+    }
+    const url = `https://www.thebluealliance.com/api/v3/team/frc${teamNumber}/event/${EVENT_KEY}/status`
+    const response = await fetch(url, {
+      headers: { 'X-TBA-Auth-Key': apiKey }
+    })
+    if (!response.ok) {
+      console.warn(`TBA API response not ok for team ${teamNumber}: ${response.status}`)
+      return null
+    }
+    const data = await response.json()
+    const opr = data?.stat_median?.opr ?? null
+    console.log(`OPR for team ${teamNumber}: ${opr}`)
+    return opr
+  } catch (error) {
+    console.error(`Failed to fetch OPR for team ${teamNumber}:`, error)
+    return null
+  }
+}
+
+const calculateRatingStats = (teamRows, ratingFieldName) => {
+  // Map display name to database column name - remove spaces from field name
+  const normalizedFieldName = ratingFieldName.replace(/\s+/g, '')
+  const dbColumnName = `${normalizedFieldName} Rating`
+  const values = teamRows
+    .map(r => r[dbColumnName])
+    .filter(v => typeof v === 'number' && !isNaN(v))
+  
+  if (values.length === 0) return null
+  
+  const avg = values.reduce((a, b) => a + b, 0) / values.length
+  const max = Math.max(...values)
+  const min = Math.min(...values)
+  
+  return {
+    type: 'rating',
+    average: avg.toFixed(2),
+    max: max,
+    min: min,
+    count: values.length
+  }
+}
+
+const formatRatingStats = (stats) => {
+  if (!stats) return '—'
+  return `Avg: ${stats.average} | Max: ${stats.max} | Min: ${stats.min}`
+}
+
+const calculateBooleanPercentage = (teamRows, fieldName) => {
+  // Map field name to database column with "?" suffix
+  let dbColumnName
+  if (fieldName === 'Broke Down') {
+    dbColumnName = 'Broke Down?'
+  } else if (fieldName === 'Penalties') {
+    dbColumnName = 'Penalties?'
+  } else {
+    dbColumnName = `${fieldName}?`
+  }
+  
+  const values = teamRows
+    .map(r => r[dbColumnName])
+    .filter(v => v !== null && v !== undefined)
+  
+  if (values.length === 0) return null
+  
+  const trueCount = values.filter(v => v === true).length
+  const percentage = ((trueCount / values.length) * 100).toFixed(1)
+  
+  return {
+    type: 'boolean',
+    trueCount,
+    totalCount: values.length,
+    percentage
+  }
+}
+
+const formatBooleanStats = (stats) => {
+  if (!stats) return '—'
+  return `True: ${stats.percentage}% (${stats.trueCount}/${stats.totalCount})`
+}
+
 function Compare() {
   const navigate = useNavigate()
 
@@ -100,6 +198,7 @@ function Compare() {
   const [statSearchTerm, setStatSearchTerm] = useState('')
   const [showStatGrid, setShowStatGrid] = useState(false)
   const [expandedCells, setExpandedCells] = useState(new Set())
+  const [oprData, setOprData] = useState({})
 
   // Ensure selectedTeams/scouters are always arrays
   const safeSelectedTeams = useMemo(
@@ -144,6 +243,26 @@ function Compare() {
       setSelectedStat(availableFields[0])
     }
   }, [availableFields, selectedStat, setSelectedStat])
+
+  // Fetch OPR data for selected teams
+  useEffect(() => {
+    const fetchOPRForTeams = async () => {
+      if (!safeSelectedTeams.length) {
+        setOprData({})
+        return
+      }
+
+      const newOprData = {}
+      for (const team of safeSelectedTeams) {
+        const teamNum = typeof team === 'string' ? parseInt(team) : team
+        const opr = await fetchTeamOPR(teamNum)
+        newOprData[team] = opr
+      }
+      setOprData(newOprData)
+    }
+
+    fetchOPRForTeams()
+  }, [safeSelectedTeams])
 
   const handleScouterToggle = (scouterName) => {
     const normalized = String(scouterName)
@@ -331,12 +450,6 @@ function Compare() {
           </select>
         </div>
 
-        <div className="compare-data-source-meta">
-          <span>Rows loaded: {matchRows.length}</span>
-          <span>Supabase: {supabaseConfigured ? 'Configured' : 'Missing env'}</span>
-          {officialTableUsed ? <span>Official table: {officialTableUsed}</span> : null}
-        </div>
-
         {sourceMode !== 'tba' ? (
           <label className="compare-checkbox-inline">
             <input
@@ -346,36 +459,6 @@ function Compare() {
             />
             <span>Only include rows where `Use Data` is true</span>
           </label>
-        ) : null}
-
-        {sourceMode !== 'tba' && scouterNames.length > 0 ? (
-          <div className="compare-scouter-filter">
-            <div className="compare-scouter-filter-header">
-              <span className="compare-control-label">Scouter Filter</span>
-              <button
-                className="action-btn clear-all"
-                onClick={() => setSelectedScouters([])}
-                type="button"
-              >
-                Clear
-              </button>
-            </div>
-            <div className="compare-scouter-grid">
-              {scouterNames.map((name) => {
-                const checked = safeSelectedScouters.includes(name)
-                return (
-                  <label key={name} className={`compare-scouter-chip ${checked ? 'selected' : ''}`}>
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => handleScouterToggle(name)}
-                    />
-                    <span>{name}</span>
-                  </label>
-                )
-              })}
-            </div>
-          </div>
         ) : null}
       </div>
 
@@ -408,133 +491,10 @@ function Compare() {
         </div>
       ) : null}
 
-      <div className="compare-stat-selection">
-        <div className={`stat-selection-header ${!showStatGrid ? 'stat-selection-header-only' : ''}`}>
-          <h2>Select Stat for Charts</h2>
-          <button 
-            onClick={() => setShowStatGrid(!showStatGrid)}
-            className="toggle-grid-btn"
-          >
-            {showStatGrid ? '▲ Hide Dropdown' : '▼ Show Dropdown'}
-          </button>
-        </div>
-
-        {showStatGrid && (
-          <>
-            <div className="stat-selection-controls">
-              <div className="search-container">
-                <input
-                  type="text"
-                  placeholder="Search stats..."
-                  value={statSearchTerm}
-                  onChange={(e) => setStatSearchTerm(e.target.value)}
-                  className="stat-search-input"
-                />
-              </div>
-            </div>
-
-            <div className="stats-grid">
-              {filteredStats.length === 0 ? (
-                <p className="no-stats">No stats found</p>
-              ) : (
-                filteredStats.map(field => (
-                  <label key={field} className={`stat-checkbox ${selectedStat === field ? 'selected' : ''}`}>
-                    <input
-                      type="radio"
-                      name="selectedStat"
-                      checked={selectedStat === field}
-                      onChange={() => setSelectedStat(field)}
-                    />
-                    <span className="stat-name">{field}</span>
-                    <span className="checkmark">✓</span>
-                  </label>
-                ))
-              )}
-            </div>
-          </>
-        )}
-      </div>
-
-      <div className="compare-charts-section">
-        <h2 className="compare-charts-title">Charts for {selectedStat}</h2>
-        {(() => {
-          if (loading) return <Loading message="Loading compare data..." />
-          if (error) return <p>Failed to load compare data: {error}</p>
-          if (!matchRows || matchRows.length === 0) {
-            return <p>{noDataDiagnostic?.reasons?.[0] || 'No data for chart.'}</p>
-          }
-          if (!selectedStat) return <p>Select a stat to view charts.</p>;
-
-          return (
-            <StatCharts 
-              matchRows={matchRows}
-              selectedTeams={safeSelectedTeams}
-              selectedStat={selectedStat}
-            />
-          );
-        })()}
-      </div>
-
-      <div className="compare-summary-section">
-        <div className="compare-summary-header">
-          <h2 className="compare-summary-title">Action Snapshot</h2>
-          <span className="toggle-text">
-            Values shown as {useMaxValues ? 'max per match' : 'average per match'}
-          </span>
-        </div>
-
-        {capabilityCards.length === 0 ? (
-          <p>{noDataDiagnostic?.reasons?.[0] || 'No capability data to show.'}</p>
-        ) : (
-          <div className="compare-capability-grid">
-            {capabilityCards.map((card) => (
-              <div key={`capability-${card.team}`} className="compare-capability-card">
-                <h3
-                  className="team-header-clickable"
-                  onClick={() => handleTeamClick(card.team)}
-                >
-                  Team {card.team}
-                </h3>
-
-                <div className="compare-capability-row">
-                  <span className="compare-capability-label">Top Actions</span>
-                  <span className="compare-capability-value">
-                    {card.activeActions.length
-                      ? card.activeActions.map((action) => action.field).join(', ')
-                      : 'No action data'}
-                  </span>
-                </div>
-
-                <div className="compare-zone-chips">
-                  {card.actions.map((action) => (
-                    <span
-                      key={`${card.team}-${action.field}`}
-                      className={`compare-zone-chip ${action.numericValue && action.numericValue > 0 ? 'active' : ''}`}
-                    >
-                      {action.field}: {formatMetricSummary(action.metric)}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="compare-ratings-grid">
-                  {card.extras.map((extra) => (
-                    <div key={`${card.team}-${extra.field}`} className="compare-rating-item">
-                      <span className="compare-capability-label">{extra.field}</span>
-                      <span className="compare-capability-value">
-                        {formatMetricSummary(extra.metric)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
       <div className="compare-summary-section">
         <div className="compare-summary-header">
           <h2 className="compare-summary-title">Summaries</h2>
+          {/**
           <label className="toggle-container">
             <input
               type="checkbox"
@@ -542,14 +502,18 @@ function Compare() {
               onChange={(e) => setUseMaxValues(e.target.checked)}
             />
             <span className="toggle-text">Show Max Values (instead of Average)</span>
-          </label>
+          </label>*/}
         </div>
         {Object.keys(summary).length === 0 ? (
           <p>{noDataDiagnostic?.reasons?.[0] || 'No data to summarize.'}</p>
         ) : (
-          <div className="summary-container" data-count={safeSelectedTeams.length}>
-            {safeSelectedTeams.map(team => (
-              summary[team] ? (
+          <>
+            <div className="summary-container" data-count={safeSelectedTeams.length}>
+            {safeSelectedTeams.map(team => {
+              // Get team rows for rating calculations
+              const teamRows = matchRows.filter(row => String(row.team) === String(team))
+              
+              return summary[team] ? (
                 <div key={team} className="summary-table">
                   <h3 
                     className="team-header-clickable" 
@@ -557,6 +521,11 @@ function Compare() {
                   >
                     Team {team}
                   </h3>
+                  {oprData[team] !== undefined && (
+                    <div style={{ padding: '0.5rem 0.75rem', backgroundColor: 'rgba(219, 234, 254, 0.82)', borderBottom: '1px solid rgba(148, 163, 184, 0.28)', fontWeight: 600 }}>
+                      <strong>OPR (The Blue Alliance):</strong> {oprData[team] !== null ? oprData[team].toFixed(2) : 'N/A'}
+                    </div>
+                  )}
                   <table>
                     <thead>
                       <tr>
@@ -565,8 +534,67 @@ function Compare() {
                       </tr>
                     </thead>
                     <tbody>
-                      {availableFields.map(field =>
-                        summary[team][field] ? (
+                      {availableFields.map(field => {
+                        // Check if this is a rating field
+                        const isRatingField = RATING_FIELDS.includes(field)
+                        
+                        // Check if this is a boolean field
+                        const booleanFields = ['Penalties', 'Bump', 'Trench', 'Broke Down']
+                        const isBooleanField = booleanFields.includes(field)
+                        
+                        // For rating fields, always calculate stats
+                        if (isRatingField) {
+                          const ratingStats = calculateRatingStats(teamRows, field)
+                          if (ratingStats) {
+                            const displayValue = formatRatingStats(ratingStats)
+                            return (
+                              <tr key={field}>
+                                <td 
+                                  className={expandedCells.has(`${team}-${field}`) ? 'expanded' : ''}
+                                  onClick={() => handleCellClick(team, field)}
+                                >
+                                  {field}
+                                </td>
+                                <td
+                                  className={expandedCells.has(`${team}-${field}-value`) ? 'expanded' : ''}
+                                  onClick={() => handleCellClick(team, `${field}-value`)}
+                                >
+                                  {displayValue}
+                                </td>
+                              </tr>
+                            )
+                          }
+                          return null
+                        }
+                        
+                        // For boolean fields, calculate percentages
+                        if (isBooleanField) {
+                          const booleanStats = calculateBooleanPercentage(teamRows, field)
+                          // Show row even if no data, with N/A
+                          const displayValue = booleanStats ? formatBooleanStats(booleanStats) : 'N/A'
+                          return (
+                            <tr key={field}>
+                              <td 
+                                className={expandedCells.has(`${team}-${field}`) ? 'expanded' : ''}
+                                onClick={() => handleCellClick(team, field)}
+                              >
+                                {field}
+                              </td>
+                              <td
+                                className={expandedCells.has(`${team}-${field}-value`) ? 'expanded' : ''}
+                                onClick={() => handleCellClick(team, `${field}-value`)}
+                              >
+                                {displayValue}
+                              </td>
+                            </tr>
+                          )
+                        }
+                        
+                        // For other fields, use summary
+                        if (!summary[team][field]) return null
+                        
+                        const displayValue = formatMetricSummary(summary[team][field])
+                        return (
                           <tr key={field}>
                             <td 
                               className={expandedCells.has(`${team}-${field}`) ? 'expanded' : ''}
@@ -578,17 +606,18 @@ function Compare() {
                               className={expandedCells.has(`${team}-${field}-value`) ? 'expanded' : ''}
                               onClick={() => handleCellClick(team, `${field}-value`)}
                             >
-                              {formatMetricSummary(summary[team][field])}
+                              {displayValue}
                             </td>
                           </tr>
-                        ) : null
-                      )}
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>
               ) : null
-            ))}
-          </div>
+            })}
+            </div>
+          </>
         )}
       </div>
     </div>

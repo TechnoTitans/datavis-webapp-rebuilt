@@ -7,8 +7,9 @@ import { updateMatchUseData } from '../utils/offlineMutations'
 import { toast } from 'sonner'
 
 function TeamData() {
-  const [selectedTeams, setSelectedTeams] = useSelectedTeams('selectedTeamsData', [])
-  const {allTeams, matchRows, loading, fetchAllTeams, fetchMatches, reloadData, setMatchRows} = useTeamData(selectedTeams, false)
+  const [selectedTeams, setSelectedTeams] = useSelectedTeams('selectedTeamsAnalysis', [])
+  const safeSelectedTeams = Array.isArray(selectedTeams) ? selectedTeams : []
+  const { allTeams, matchRows, loading, setMatchRows } = useTeamData(safeSelectedTeams, true)
 
   const handleTeamToggle = (teamNumber) => {
     setSelectedTeams([teamNumber])
@@ -55,6 +56,7 @@ function TeamData() {
     return `${selectedTeams.length} Teams`
   }
 
+
   return (
     <div>
       <h1>Team Data</h1>
@@ -67,7 +69,7 @@ function TeamData() {
         title="Select Teams to View"
       />
 
-      <div className="team-data-section">
+      <div style={{ marginTop: '2rem' }}>
         <h2>Matches for {getTeamDisplayText()}</h2>
         {loading ? (
           <Loading message="Loading matches..." />
@@ -76,7 +78,7 @@ function TeamData() {
         ) : (
           <div className="team-data-container">
             {selectedTeams.map(team => {
-              const teamRows = matchRows.filter(row => String(row.team) === String(team))
+              const teamRows = matchRows.filter(row => row.team === team)
               if (teamRows.length === 0) return null
               
               return (
