@@ -1,0 +1,41 @@
+/* ═══════════════════════════════════════════════
+   TBA DATA PAGE — append to your existing CSS file
+   ═══════════════════════════════════════════════ */
+
+/* Always-visible horizontal scrollbar on the TBA table */
+.tba-data-scroll {
+    overflow-x: scroll;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb, #94a3b8) var(--scrollbar-track, #f1f5f9);
+  }
+  
+  .tba-data-scroll::-webkit-scrollbar {
+    height: 10px;
+    display: block;
+  }
+  
+  .tba-data-scroll::-webkit-scrollbar-track {
+    background: var(--scrollbar-track, #f1f5f9);
+  }
+  
+  .tba-data-scroll::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb, #94a3b8);
+    border-radius: 10px;
+    border: 2px solid var(--scrollbar-track, #f1f5f9);
+  }
+  
+  .tba-data-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover, #64748b);
+  }
+  
+  /* Prevent TBA table cells from wrapping so scroll actually triggers */
+  .tba-data-table {
+    white-space: nowrap;
+  }
+  
+  /* Row/column count label beneath each team table */
+  .tba-data-row-count {
+    font-size: 0.78rem;
+    opacity: 0.5;
+    margin-top: 0.4rem;
+  }

@@ -514,15 +514,20 @@ function Picklist() {
     if (!target) return
 
     if (activeId.startsWith(MASTER_PREFIX)) {
-      const teamNumber = parseDragNumber(activeId, MASTER_PREFIX)
-      if (teamNumber === null) return
-      const targetList = lists.find(list => list.id === target.listId)
-      if (!targetList) return
-      if (targetList.entries.some(entry => entry.teamNumber === teamNumber)) {
-        toast.message(`Team ${teamNumber} is already in "${targetList.title}".`)
-        return
+      const teamNumber = parseDragNumber(activeId, MASTER_PREFIX);
+      if (teamNumber === null) return;
+    
+      const targetList = lists.find((list) => list.id === target.listId);
+      if (!targetList) return;
+    
+      const isTeamAlreadyInList = targetList.entries.some(
+        (entry) => entry.teamNumber === teamNumber
+      );
+      if (isTeamAlreadyInList) {
+        toast.message(`Team ${teamNumber} is already in "${targetList.title}".`);
+        return;
       }
-
+    
       await runProtectedWrite(
         async (passcode) => {
           await addPicklistEntry({
@@ -531,36 +536,39 @@ function Picklist() {
             targetPosition: target.index,
             note: '',
             passcode,
-          })
+          });
         },
-        { reload: true },
-      )
-      return
+        { reload: true }
+      );
+      return;
     }
-
+    
     if (activeId.startsWith(ENTRY_PREFIX)) {
-      const entryId = parseDragNumber(activeId, ENTRY_PREFIX)
-      if (entryId === null) return
-      const source = getEntryLocation(entryId, lists)
-      if (!source) return
-
-      const sourceList = lists.find(list => list.id === source.listId)
-      const targetList = lists.find(list => list.id === target.listId)
-      if (!sourceList || !targetList) return
-
+      const entryId = parseDragNumber(activeId, ENTRY_PREFIX);
+      if (entryId === null) return;
+    
+      const source = getEntryLocation(entryId, lists);
+      if (!source) return;
+    
+      const sourceList = lists.find((list) => list.id === source.listId);
+      const targetList = lists.find((list) => list.id === target.listId);
+      if (!sourceList || !targetList) return;
+    
       if (source.listId === target.listId) {
-        let targetIndex = target.index
+        let targetIndex = target.index;
         if (target.isListContainer) {
-          targetIndex = sourceList.entries.length - 1
+          targetIndex = sourceList.entries.length - 1;
         }
-        if (targetIndex < 0 || source.index === targetIndex) return
-
+        if (targetIndex < 0 || source.index === targetIndex) return;
+    
         const reorderedIds = arrayMove(
-          sourceList.entries.map(entry => entry.id),
+          sourceList.entries.map((entry) => entry.id),
           source.index,
-          targetIndex,
-        )
-
+          targetIndex
+        );
+    
+        // Additional logic for reordering can be added here
+    ç
         await runProtectedWrite(
           async (passcode) => {
             await reorderPicklistEntries({

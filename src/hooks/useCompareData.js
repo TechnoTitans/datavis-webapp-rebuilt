@@ -346,6 +346,7 @@ export const useCompareData = ({
 }) => {
   const [allTeams, setAllTeams] = useState([])
   const [matchRows, setMatchRows] = useState([])
+  const [tbaRows, setTbaRows] = useState([])
   const [scouterNames, setScouterNames] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -374,6 +375,7 @@ export const useCompareData = ({
         if (!isCancelled) {
           setAllTeams([])
           setMatchRows([])
+          setTbaRows([])
           setScouterNames([])
           setOfficialTableUsed(null)
           setDiagnostics({
@@ -467,10 +469,21 @@ export const useCompareData = ({
           return sourceOrderA - sourceOrderB
         })
 
+        // Build filtered tbaRows for the TBA data table (respects selectedTeams)
+        let filteredTbaRows = officialRows
+        if (selectedTeamSet.size > 0) {
+          filteredTbaRows = filteredTbaRows.filter((row) => selectedTeamSet.has(String(row.team)))
+        }
+        filteredTbaRows.sort((a, b) => {
+          if (a.team !== b.team) return Number(a.team) - Number(b.team)
+          return a.matchNumber - b.matchNumber
+        })
+
         if (!isCancelled) {
           setAllTeams(allTeamNumbers)
           setScouterNames(availableScouters)
           setMatchRows(filteredRows)
+          setTbaRows(filteredTbaRows)
           setOfficialTableUsed(officialSourceTable)
           setDiagnostics({
             scouterRawRows: scouterRowsRaw.length,
@@ -486,6 +499,7 @@ export const useCompareData = ({
           setAllTeams([])
           setScouterNames([])
           setMatchRows([])
+          setTbaRows([])
           setOfficialTableUsed(null)
           setDiagnostics({
             scouterRawRows: 0,
@@ -516,6 +530,7 @@ export const useCompareData = ({
   return {
     allTeams,
     matchRows,
+    tbaRows,
     scouterNames,
     loading,
     error,

@@ -1,0 +1,134 @@
+/* ═══════════════════════════════════════════════════
+   ADD THESE STYLES TO YOUR COMPARE CSS FILE
+   (e.g. Compare.css or wherever .compare-container lives)
+   ═══════════════════════════════════════════════════ */
+
+/* ── TBA section container ── */
+.compare-tba-section {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 8px;
+    background: var(--surface-color, #fff);
+  }
+  
+  .compare-section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 1rem 0;
+  }
+  
+  .compare-section-subtitle {
+    font-size: 0.9rem;
+    font-weight: 400;
+    opacity: 0.6;
+  }
+  
+  /* ── TBA table wrapper ── */
+  .tba-table-wrapper {
+    width: 100%;
+  }
+  
+  .tba-table-meta {
+    font-size: 0.8rem;
+    opacity: 0.55;
+    margin-bottom: 0.5rem;
+  }
+  
+  .tba-table-empty {
+    color: var(--text-muted, #94a3b8);
+    font-style: italic;
+    padding: 1rem 0;
+  }
+  
+  .tba-table-error {
+    color: var(--color-error, #ef4444);
+  }
+  
+  /* ── Scroll container — always-visible horizontal scrollbar ── */
+  .tba-table-scroll {
+    width: 100%;
+    overflow-x: scroll;           /* always show horizontal scrollbar */
+    overflow-y: visible;
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 6px;
+    /* Force scrollbar to always be visible (WebKit) */
+    scrollbar-width: thin;        /* Firefox */
+    scrollbar-color: var(--scrollbar-thumb, #94a3b8) var(--scrollbar-track, #f1f5f9);
+  }
+  
+  /* WebKit (Chrome, Safari, Edge) — always-visible, styled scrollbar */
+  .tba-table-scroll::-webkit-scrollbar {
+    height: 10px;
+    display: block;               /* always visible */
+  }
+  
+  .tba-table-scroll::-webkit-scrollbar-track {
+    background: var(--scrollbar-track, #f1f5f9);
+    border-radius: 0 0 6px 6px;
+  }
+  
+  .tba-table-scroll::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb, #94a3b8);
+    border-radius: 10px;
+    border: 2px solid var(--scrollbar-track, #f1f5f9);
+  }
+  
+  .tba-table-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover, #64748b);
+  }
+  
+  /* ── The table itself ── */
+  .tba-table {
+    border-collapse: collapse;
+    white-space: nowrap;          /* prevent cells from wrapping — enables horizontal scroll */
+    font-size: 0.85rem;
+    min-width: 100%;
+  }
+  
+  .tba-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  
+  .tba-table th {
+    background: var(--table-header-bg, #f8fafc);
+    color: var(--table-header-color, #475569);
+    font-weight: 600;
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 2px solid var(--border-color, #e2e8f0);
+    border-right: 1px solid var(--border-color, #e2e8f0);
+    letter-spacing: 0.02em;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+  }
+  
+  .tba-table th:last-child {
+    border-right: none;
+  }
+  
+  .tba-table td {
+    padding: 0.45rem 0.75rem;
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+    border-right: 1px solid var(--border-color, #e2e8f0);
+    color: var(--text-primary, #1e293b);
+    vertical-align: middle;
+  }
+  
+  .tba-table td:last-child {
+    border-right: none;
+  }
+  
+  .tba-table tbody tr:hover {
+    background: var(--table-row-hover, #f0f9ff);
+  }
+  
+  .tba-table tbody tr:nth-child(even) {
+    background: var(--table-row-alt, #f8fafc);
+  }
+  
+  .tba-table tbody tr:nth-child(even):hover {
+    background: var(--table-row-hover, #f0f9ff);
+  }

@@ -6,6 +6,7 @@ import Layout from './pages/TopBar' // acts as layout wrapper
 import TeamData from './pages/TeamData'
 import QualData from './pages/QualData'
 import StatboticsData from './pages/StatboticsData'
+import TBAData from './pages/TBAData'
 import Compare from './pages/Compare'
 import Settings from './pages/Settings'
 import MatchStrategy from './pages/MatchStrategy'
@@ -24,6 +25,7 @@ function App() {
           <Route path="/team-data" element={<TeamData />} />
           <Route path="/qual-data" element={<QualData />} />
           <Route path="/statbotics-data" element={<StatboticsData />} /> {/* Statbotics tab */}
+          <Route path="/TBA-data" element={<TBAData />} /> {/* TBA Data tab */}
           <Route path="/compare" element={<Compare />} />
           <Route path="/team-analysis" element={<TeamAnalysis />} />
           <Route path="/match-strategy" element={<MatchStrategy />} />
