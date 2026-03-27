@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Layout from './pages/TopBar' // acts as layout wrapper
 import TeamData from './pages/TeamData'
 import QualData from './pages/QualData'
+import PitScoutingData from './pages/PitScoutingData'
 import StatboticsData from './pages/StatboticsData'
 import TBAData from './pages/TBAData'
 import Compare from './pages/Compare'
@@ -24,8 +25,9 @@ function App() {
           <Route path="/" element={<TeamData />} />
           <Route path="/team-data" element={<TeamData />} />
           <Route path="/qual-data" element={<QualData />} />
-          <Route path="/statbotics-data" element={<StatboticsData />} /> {/* Statbotics tab */}
-          <Route path="/TBA-data" element={<TBAData />} /> {/* TBA Data tab */}
+          <Route path="/pit-scouting-data" element={<PitScoutingData />} /> 
+          <Route path="/statbotics-data" element={<StatboticsData />} /> 
+          <Route path="/TBA-data" element={<TBAData />} /> 
           <Route path="/compare" element={<Compare />} />
           <Route path="/team-analysis" element={<TeamAnalysis />} />
           <Route path="/match-strategy" element={<MatchStrategy />} />
