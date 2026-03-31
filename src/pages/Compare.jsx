@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import TeamSelector from '../components/TeamSelector'
 import StatCharts from '../components/charts/StatCharts'
-import StatRangeChart from '../components/charts/StatRangeChart'
 import Loading from '../components/Loading'
 import { useSelectedTeams, useLocalStorage } from '../hooks/useLocalStorage'
 import { useTeamSummary } from '../hooks/useTeamSummary'
@@ -95,6 +94,31 @@ const formatMetricSummary = (metric) => {
   return `${metric.value} (${metric.percent}%)`
 }
 
+const fetchTeamOPR = async (teamNumber) => {
+  try {
+    const apiKey = import.meta.env.VITE_TBA_API_KEY
+    if (!apiKey) {
+      console.warn('VITE_TBA_API_KEY not set')
+      return null
+    }
+    const url = `https://www.thebluealliance.com/api/v3/team/frc${teamNumber}/event/${EVENT_KEY}/status`
+    const response = await fetch(url, {
+      headers: { 'X-TBA-Auth-Key': apiKey }
+    })
+    if (!response.ok) {
+      console.warn(`TBA API response not ok for team ${teamNumber}: ${response.status}`)
+      return null
+    }
+    const data = await response.json()
+    const opr = data?.stat_median?.opr ?? null
+    console.log(`OPR for team ${teamNumber}: ${opr}`)
+    return opr
+  } catch (error) {
+    console.error(`Failed to fetch OPR for team ${teamNumber}:`, error)
+    return null
+  }
+}
+
 const calculateRatingStats = (teamRows, ratingFieldName) => {
   const normalizedFieldName = ratingFieldName.replace(/\s+/g, '')
   const dbColumnName = `${normalizedFieldName} Rating`
@@ -142,11 +166,6 @@ const calculateBooleanPercentage = (teamRows, fieldName) => {
     totalCount: values.length,
     percentage,
   }
-}
-
-const formatBooleanStats = (stats) => {
-  if (!stats) return '—'
-  return `True: ${stats.percentage}% (${stats.trueCount}/${stats.totalCount})`
 }
 
 const getComparisonValue = (teamRows, teamSummary, field) => {
@@ -197,9 +216,9 @@ const buildFieldColorMap = (teams, matchRows, summary, field) => {
 }
 
 const RANK_COLOR_STYLES = {
-  high: { color: '#22c55e', fontWeight: 700 },
-  mid: { color: '#eab308', fontWeight: 700 },
-  low: { color: '#ef4444', fontWeight: 700 },
+  high: { color: '#16a34a', fontWeight: '700' },
+  mid: { color: '#ca8a04', fontWeight: '700' },
+  low: { color: '#dc2626', fontWeight: '700' },
 }
 
 function Compare() {
@@ -219,6 +238,7 @@ function Compare() {
   const [statSearchTerm, setStatSearchTerm] = useState('')
   const [showStatGrid, setShowStatGrid] = useState(false)
   const [expandedCells, setExpandedCells] = useState(new Set())
+  const [oprData, setOprData] = useState({})
   const [pinnedField, setPinnedField] = useState(null)
 
   const safeSelectedTeams = useMemo(
@@ -261,6 +281,42 @@ function Compare() {
       setSelectedStat(availableFields[0])
     }
   }, [availableFields, selectedStat, setSelectedStat])
+
+  useEffect(() => {
+    const fetchOPRForTeams = async () => {
+      if (!safeSelectedTeams.length) {
+        setOprData({})
+        return
+      }
+
+      const newOprData = {}
+      for (const team of safeSelectedTeams) {
+        const teamNum = typeof team === 'string' ? parseInt(team) : team
+        const opr = await fetchTeamOPR(teamNum)
+        newOprData[team] = opr
+      }
+      setOprData(newOprData)
+    }
+
+    fetchOPRForTeams()
+  }, [safeSelectedTeams])
+
+  const fieldColorMaps = useMemo(() => {
+    const maps = {}
+    for (const field of COMPARE_STAT_FIELDS) {
+      maps[field] = buildFieldColorMap(safeSelectedTeams, matchRows, summary, field)
+    }
+    return maps
+  }, [safeSelectedTeams, matchRows, summary])
+
+  const sortedFields = useMemo(() => {
+    if (!pinnedField) return availableFields
+    return [pinnedField, ...availableFields.filter(f => f !== pinnedField)]
+  }, [availableFields, pinnedField])
+
+  const handleFieldDoubleClick = (field) => {
+    setPinnedField(prev => prev === field ? null : field)
+  }
 
   const handleScouterToggle = (scouterName) => {
     const normalized = String(scouterName)
@@ -317,23 +373,6 @@ function Compare() {
   const filteredStats = availableFields.filter(stat =>
     stat.toLowerCase().includes(statSearchTerm.toLowerCase())
   )
-
-  const fieldColorMaps = useMemo(() => {
-    const maps = {}
-    for (const field of COMPARE_STAT_FIELDS) {
-      maps[field] = buildFieldColorMap(safeSelectedTeams, matchRows, summary, field)
-    }
-    return maps
-  }, [safeSelectedTeams, matchRows, summary])
-
-  const sortedFields = useMemo(() => {
-    if (!pinnedField) return availableFields
-    return [pinnedField, ...availableFields.filter(f => f !== pinnedField)]
-  }, [availableFields, pinnedField])
-
-  const handleFieldDoubleClick = (field) => {
-    setPinnedField(prev => prev === field ? null : field)
-  }
 
   const capabilityCards = useMemo(() => {
     return safeSelectedTeams
@@ -536,22 +575,16 @@ function Compare() {
 
       <div className="compare-summary-section">
         <div className="compare-summary-header">
-          <h2 className="compare-summary-title">Summaries with Charts</h2>
-          <label className="toggle-container">
-            <input
-              type="checkbox"
-              checked={useMaxValues}
-              onChange={(e) => setUseMaxValues(e.target.checked)}
-            />
-            <span className="toggle-text">Show Max Values (instead of Average)</span>
-          </label>
+          <h2 className="compare-summary-title">Summaries</h2>
         </div>
         {Object.keys(summary).length === 0 ? (
           <p>{noDataDiagnostic?.reasons?.[0] || 'No data to summarize.'}</p>
         ) : (
           <div className="summary-container" data-count={safeSelectedTeams.length}>
-            {safeSelectedTeams.map(team => (
-              summary[team] ? (
+            {safeSelectedTeams.map(team => {
+              const teamRows = matchRows.filter(row => String(row.team) === String(team))
+
+              return summary[team] ? (
                 <div key={team} className="summary-card">
                   <h3
                     className="team-header-clickable"
@@ -559,29 +592,150 @@ function Compare() {
                   >
                     Team {team}
                   </h3>
-                  <StatRangeChart
-                    data={availableFields.map(field => {
-                      const metric = summary[team][field]
-                      if (!metric || metric.type !== 'rating') {
-                        return {
-                          field,
-                          avg: 0,
-                          min: 0,
-                          max: 0,
+
+                  {oprData[team] !== undefined && (
+                    <div style={{ padding: '0.5rem 0.75rem', backgroundColor: 'rgba(219, 234, 254, 0.82)', borderBottom: '1px solid rgba(148, 163, 184, 0.28)', fontWeight: 600 }}>
+                      <strong>OPR (The Blue Alliance):</strong> {oprData[team] !== null ? oprData[team].toFixed(2) : 'N/A'}
+                    </div>
+                  )}
+
+                  {/* Unified stats table with Avg / Min / Max columns for rating fields */}
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Field</th>
+                        <th>Avg</th>
+                        <th>Min</th>
+                        <th>Max</th>
+                        <th>Details</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedFields.map(field => {
+                        const isRatingField = RATING_FIELDS.includes(field)
+                        const booleanFields = ['Penalties', 'Bump', 'Trench', 'Broke Down']
+                        const isBooleanField = booleanFields.includes(field)
+
+                        const rankLabel = fieldColorMaps[field]?.[team]
+                        const rankStyle = rankLabel ? RANK_COLOR_STYLES[rankLabel] : undefined
+
+                        const isPinned = pinnedField === field
+                        const fieldCellStyle = isPinned
+                          ? { fontWeight: 700, color: '#6366f1', cursor: 'pointer', userSelect: 'none' }
+                          : { cursor: 'pointer', userSelect: 'none' }
+
+                        if (isRatingField) {
+                          const ratingStats = calculateRatingStats(teamRows, field)
+                          if (!ratingStats) return null
+                          return (
+                            <tr key={field}>
+                              <td
+                                style={fieldCellStyle}
+                                onClick={() => handleCellClick(team, field)}
+                                onDoubleClick={() => handleFieldDoubleClick(field)}
+                                title="Double-click to pin this field to the top"
+                              >
+                                {isPinned ? '📌 ' : ''}{field}
+                              </td>
+                              <td style={rankStyle || {}}>{ratingStats.average}</td>
+                              <td>{ratingStats.min}</td>
+                              <td>{ratingStats.max}</td>
+                              <td>Rating ({ratingStats.count} matches)</td>
+                            </tr>
+                          )
                         }
-                      }
-                      return {
-                        field,
-                        avg: parseFloat(metric.average) || 0,
-                        min: metric.min || 0,
-                        max: metric.max || 0,
-                      }
-                    })}
-                    fieldName="Team Stats"
-                  />
+
+                        if (isBooleanField) {
+                          const booleanStats = calculateBooleanPercentage(teamRows, field)
+                          return (
+                            <tr key={field}>
+                              <td
+                                style={fieldCellStyle}
+                                onClick={() => handleCellClick(team, field)}
+                                onDoubleClick={() => handleFieldDoubleClick(field)}
+                                title="Double-click to pin this field to the top"
+                              >
+                                {isPinned ? '📌 ' : ''}{field}
+                              </td>
+                              <td colSpan={3} style={rankStyle || {}}>
+                                {booleanStats
+                                  ? <span style={rankStyle || {}}>{booleanStats.percentage}%</span>
+                                  : 'N/A'}
+                              </td>
+                              <td>
+                                {booleanStats
+                                  ? `${booleanStats.trueCount} / ${booleanStats.totalCount} matches`
+                                  : '—'}
+                              </td>
+                            </tr>
+                          )
+                        }
+
+                        if (!summary[team][field]) return null
+                        const metric = summary[team][field]
+
+                        if (metric.type === 'scoring') {
+                          const attempts = Number(metric.avgAttempts)
+                          const made = Number(metric.average)
+                          const attemptsLabel = Number.isFinite(attempts) ? attempts.toFixed(2) : String(metric.avgAttempts)
+                          const madeLabel = Number.isFinite(made) ? made.toFixed(2) : String(metric.average)
+                          return (
+                            <tr key={field}>
+                              <td
+                                style={fieldCellStyle}
+                                onClick={() => handleCellClick(team, field)}
+                                onDoubleClick={() => handleFieldDoubleClick(field)}
+                                title="Double-click to pin this field to the top"
+                              >
+                                {isPinned ? '📌 ' : ''}{field}
+                              </td>
+                              <td style={rankStyle || {}}>{madeLabel}</td>
+                              <td colSpan={2}>—</td>
+                              <td>{attemptsLabel} attempts · {metric.successRate}% success</td>
+                            </tr>
+                          )
+                        }
+
+                        if (metric.type === 'number') {
+                          const value = Number(metric.value)
+                          return (
+                            <tr key={field}>
+                              <td
+                                style={fieldCellStyle}
+                                onClick={() => handleCellClick(team, field)}
+                                onDoubleClick={() => handleFieldDoubleClick(field)}
+                                title="Double-click to pin this field to the top"
+                              >
+                                {isPinned ? '📌 ' : ''}{field}
+                              </td>
+                              <td style={rankStyle || {}}>{Number.isFinite(value) ? value.toFixed(2) : metric.value}</td>
+                              <td colSpan={2}>—</td>
+                              <td>—</td>
+                            </tr>
+                          )
+                        }
+
+                        // boolean-like fallback (percent)
+                        return (
+                          <tr key={field}>
+                            <td
+                              style={fieldCellStyle}
+                              onClick={() => handleCellClick(team, field)}
+                              onDoubleClick={() => handleFieldDoubleClick(field)}
+                              title="Double-click to pin this field to the top"
+                            >
+                              {isPinned ? '📌 ' : ''}{field}
+                            </td>
+                            <td colSpan={3} style={rankStyle || {}}>{metric.value} ({metric.percent}%)</td>
+                            <td>—</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               ) : null
-            ))}
+            })}
           </div>
         )}
       </div>
