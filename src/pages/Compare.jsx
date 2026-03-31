@@ -129,6 +129,8 @@ const calculateRatingStats = (teamRows, ratingFieldName) => {
   if (values.length === 0) return null
 
   const avg = values.reduce((a, b) => a + b, 0) / values.length
+  if (avg === 0) return null
+
   const max = Math.max(...values)
   const min = Math.min(...values)
 
@@ -158,6 +160,8 @@ const calculateBooleanPercentage = (teamRows, fieldName) => {
   if (values.length === 0) return null
 
   const trueCount = values.filter(v => v === true).length
+  if (trueCount === 0) return null
+
   const percentage = ((trueCount / values.length) * 100).toFixed(1)
 
   return {
@@ -219,6 +223,13 @@ const RANK_COLOR_STYLES = {
   high: { color: '#16a34a', fontWeight: '700' },
   mid: { color: '#ca8a04', fontWeight: '700' },
   low: { color: '#dc2626', fontWeight: '700' },
+}
+
+// Returns null for any value that is zero (numeric or string), otherwise returns the value as-is
+const zeroToNull = (value) => {
+  if (value === null || value === undefined) return null
+  const num = Number(value)
+  return Number.isFinite(num) && num === 0 ? null : value
 }
 
 function Compare() {
@@ -635,7 +646,7 @@ function Compare() {
                                 onDoubleClick={() => handleFieldDoubleClick(field)}
                                 title="Double-click to pin this field to the top"
                               >
-                                {isPinned ? '📌 ' : ''}{field}
+                                {isPinned ? ' ' : ''}{field}
                               </td>
                               <td style={rankStyle || {}}>{ratingStats.average}</td>
                               <td>{ratingStats.min}</td>
@@ -655,7 +666,7 @@ function Compare() {
                                 onDoubleClick={() => handleFieldDoubleClick(field)}
                                 title="Double-click to pin this field to the top"
                               >
-                                {isPinned ? '📌 ' : ''}{field}
+                                {isPinned ? ' ' : ''}{field}
                               </td>
                               <td colSpan={3} style={rankStyle || {}}>
                                 {booleanStats
@@ -678,7 +689,8 @@ function Compare() {
                           const attempts = Number(metric.avgAttempts)
                           const made = Number(metric.average)
                           const attemptsLabel = Number.isFinite(attempts) ? attempts.toFixed(2) : String(metric.avgAttempts)
-                          const madeLabel = Number.isFinite(made) ? made.toFixed(2) : String(metric.average)
+                          const madeLabel = zeroToNull(Number.isFinite(made) ? made.toFixed(2) : null)
+                          if (!madeLabel) return null
                           return (
                             <tr key={field}>
                               <td
@@ -687,7 +699,7 @@ function Compare() {
                                 onDoubleClick={() => handleFieldDoubleClick(field)}
                                 title="Double-click to pin this field to the top"
                               >
-                                {isPinned ? '📌 ' : ''}{field}
+                                {isPinned ? ' ' : ''}{field}
                               </td>
                               <td style={rankStyle || {}}>{madeLabel}</td>
                               <td colSpan={2}>—</td>
@@ -698,6 +710,8 @@ function Compare() {
 
                         if (metric.type === 'number') {
                           const value = Number(metric.value)
+                          const displayValue = zeroToNull(Number.isFinite(value) ? value.toFixed(2) : null)
+                          if (!displayValue) return null
                           return (
                             <tr key={field}>
                               <td
@@ -706,9 +720,9 @@ function Compare() {
                                 onDoubleClick={() => handleFieldDoubleClick(field)}
                                 title="Double-click to pin this field to the top"
                               >
-                                {isPinned ? '📌 ' : ''}{field}
+                                {isPinned ? ' ' : ''}{field}
                               </td>
-                              <td style={rankStyle || {}}>{Number.isFinite(value) ? value.toFixed(2) : metric.value}</td>
+                              <td style={rankStyle || {}}>{displayValue}</td>
                               <td colSpan={2}>—</td>
                               <td>—</td>
                             </tr>
@@ -724,7 +738,7 @@ function Compare() {
                               onDoubleClick={() => handleFieldDoubleClick(field)}
                               title="Double-click to pin this field to the top"
                             >
-                              {isPinned ? '📌 ' : ''}{field}
+                              {isPinned ? ' ' : ''}{field}
                             </td>
                             <td colSpan={3} style={rankStyle || {}}>{metric.value} ({metric.percent}%)</td>
                             <td>—</td>
