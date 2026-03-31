@@ -27,7 +27,7 @@ function Layout({ children }) {
   ]
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-hidden">
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/95">
         <div className="mx-auto w-full max-w-6xl px-6 py-3">
           <div className="grid grid-cols-[auto,1fr,auto] items-center gap-4">
@@ -144,12 +144,10 @@ function Layout({ children }) {
             </div>
           </div>
         ) : null}
-
-        {/* Env warning removed at user request */}
       </header>
 
-      <main className="mx-auto w-full max-w-6xl px-6 py-10">
-        <section className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm md:p-8">
+      <main className="mx-auto w-full max-w-6xl px-6 py-10 min-w-0">
+        <section className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm md:p-8 min-w-0">
           {children}
         </section>
       </main>

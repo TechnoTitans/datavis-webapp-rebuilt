@@ -152,7 +152,10 @@
   gap: 2rem;
 }
 
-.team-data-table-section,
+.team-data-table-section {
+  overflow: hidden;
+}
+
 .chart-container,
 .visualization-card,
 .summary-table {
