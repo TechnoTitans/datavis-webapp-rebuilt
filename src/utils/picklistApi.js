@@ -1,11 +1,23 @@
 import { supabase, supabaseConfigured } from '../supabaseClient'
 
 const SCOUTING_ID_COL = '"Scouting ID"'
+const TBA_BASE = 'https://www.thebluealliance.com/api/v3'
+const TBA_DISTRICT_KEY = '2026pch'
 
 const ensureSupabase = () => {
   if (!supabaseConfigured || !supabase) {
     throw new Error('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_KEY.')
   }
+}
+
+const tbaFetch = async (path) => {
+  const apiKey = import.meta.env.VITE_TBA_API_KEY
+  if (!apiKey) return null
+  const res = await fetch(`${TBA_BASE}${path}`, {
+    headers: { 'X-TBA-Auth-Key': apiKey },
+  })
+  if (!res.ok) return null
+  return res.json()
 }
 
 const parseEventKeyFromScoutingId = (scoutingId) => {
@@ -37,15 +49,54 @@ const callRpc = async (fnName, args = {}) => {
 
 export const getPicklistEventKeys = async () => {
   ensureSupabase()
-  const { data, error } = await supabase.from('match_data').select(SCOUTING_ID_COL)
-  if (error) throw error
 
-  const events = new Set()
-  for (const row of data || []) {
-    const eventKey = parseEventKeyFromScoutingId(row?.['Scouting ID'])
-    if (eventKey) events.add(eventKey)
+  const scoutingEventsPromise = supabase
+    .from('match_data')
+    .select(SCOUTING_ID_COL)
+    .then(({ data, error }) => {
+      if (error) throw error
+      const events = new Map()
+      for (const row of data || []) {
+        const key = parseEventKeyFromScoutingId(row?.['Scouting ID'])
+        if (key) events.set(key, key)
+      }
+      return events
+    })
+
+  const tbaEventsPromise = tbaFetch(`/district/${TBA_DISTRICT_KEY}/events`).then(
+    (events) => {
+      const map = new Map()
+      if (!Array.isArray(events)) return map
+      for (const e of events) {
+        if (e.key) map.set(e.key, e.name || e.key)
+      }
+      return map
+    },
+  )
+
+  const [scoutingEvents, tbaEvents] = await Promise.all([
+    scoutingEventsPromise,
+    tbaEventsPromise.catch(() => new Map()),
+  ])
+
+  const merged = new Map()
+  for (const [key, name] of tbaEvents) merged.set(key, name)
+  for (const [key, name] of scoutingEvents) {
+    if (!merged.has(key)) merged.set(key, name)
   }
-  return Array.from(events).sort((a, b) => a.localeCompare(b))
+
+  return Array.from(merged.entries())
+    .map(([key, name]) => ({ key, name }))
+    .sort((a, b) => a.key.localeCompare(b.key))
+}
+
+const fetchTbaTeams = async (eventKey) => {
+  const teams = await tbaFetch(`/event/${eventKey}/teams/simple`)
+  if (!Array.isArray(teams)) return []
+  return teams
+    .map((t) => t.team_number)
+    .filter((n) => Number.isFinite(n))
+    .sort((a, b) => a - b)
 }
 
 export const getMasterTeamsWithRank = async (eventKey) => {
@@ -65,8 +116,15 @@ export const getMasterTeamsWithRank = async (eventKey) => {
     if (team) teamSet.add(team)
   }
 
+  if (teamSet.size === 0) {
+    const tbaTeams = await fetchTbaTeams(eventKey)
+    if (tbaTeams.length > 0) {
+      return tbaTeams.map((teamNumber) => ({ teamNumber, rank: null }))
+    }
+    return []
+  }
+
   const teamNumbers = Array.from(teamSet).sort((a, b) => a - b)
-  if (teamNumbers.length === 0) return []
 
   let statboticsRows = []
   const { data: rankRows, error: rankError } = await supabase
@@ -75,7 +133,6 @@ export const getMasterTeamsWithRank = async (eventKey) => {
     .in('team', teamNumbers)
 
   if (rankError) {
-    // Graceful fallback: render teams even when rank table is unavailable.
     console.warn('[Picklist] Could not fetch Statbotics ranks:', rankError)
   } else {
     statboticsRows = rankRows || []
