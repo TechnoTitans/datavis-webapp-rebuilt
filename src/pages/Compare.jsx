@@ -214,7 +214,6 @@ function Compare() {
   const {
     allTeams,
     matchRows,
-    scouterNames,
     loading,
     error,
     officialTableUsed,

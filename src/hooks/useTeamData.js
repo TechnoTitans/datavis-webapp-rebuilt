@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
 import { parseTeamNumber, parseMatchNumber } from '../utils/helpers'
+import { fetchCSVData } from '../utils/csvHandler'
 
 /**
  * Custom hook for fetching and managing team data
@@ -15,20 +16,11 @@ export const useTeamData = (selectedTeams = [], useDataOnly = false) => {
 
   // Fetch all available teams
   const fetchAllTeams = async () => {
-    if (!supabase) {
-      setAllTeams([])
-      return
-    }
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('match_data')
         .select('"Scouting ID"')
-
-      if (error) {
-        console.error('Error fetching scouting IDs:', error)
-        return
-      }
-
+      
       const teamNumbers = data
         .map(row => parseTeamNumber(row["Scouting ID"]))
         .filter(num => num !== null)
@@ -36,17 +28,24 @@ export const useTeamData = (selectedTeams = [], useDataOnly = false) => {
       const uniqueTeams = [...new Set(teamNumbers)].sort((a, b) => a - b)
       setAllTeams(uniqueTeams)
     } catch (error) {
-      console.error('Error in fetchAllTeams:', error)
+        console.error('Error fetching match data:', error)
+        try {
+          const csvData = await fetchCSVData()
+          const teamNumbers = csvData.map(row => parseTeamNumber(row["Scouting ID"])).filter(num => num !== null)
+          const uniqueTeams = [...new Set(teamNumbers)].sort((a, b) => a - b)
+          setAllTeams(uniqueTeams)
+        } catch (csvError) {
+          console.error('Error fetching match data from CSV fallback:', csvError)
+          alert('Failed to load match data.')
+        return
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
   // Fetch matches for selected teams
   const fetchMatches = async () => {
-    if (!supabase) {
-      setMatchRows([])
-      setLoading(false)
-      return
-    }
     if (!selectedTeams || selectedTeams.length === 0) {
       setMatchRows([])
       return
@@ -61,13 +60,6 @@ export const useTeamData = (selectedTeams = [], useDataOnly = false) => {
       }
 
       const { data, error } = await query
-
-      if (error) {
-        console.error('Error fetching match data:', error)
-        alert('Failed to load match data.')
-        // Avoid blocking UI; pages can show their own warnings.
-        return
-      }
 
       // Filter and sort rows
       let filteredRows = []
@@ -86,7 +78,32 @@ export const useTeamData = (selectedTeams = [], useDataOnly = false) => {
 
       setMatchRows(filteredRows)
     } catch (error) {
-      console.error('Error in fetchMatches:', error)
+        console.error('Error fetching match data:', error)
+        try {
+          const csvData = await fetchCSVData()
+          let filteredRows = []
+          
+          for (const row of csvData) {
+            const teamNumber = parseTeamNumber(row["Scouting ID"])
+            if (teamNumber && selectedTeams.includes(Number(teamNumber))) {
+              if (useDataOnly && row["Use Data"] !== 'true' && row["Use Data"] !== true) {
+                continue
+              }
+              filteredRows.push({ ...row, team: Number(teamNumber) })
+            }
+          }
+          
+          filteredRows.sort((a, b) => {
+            if (a.team !== b.team) return Number(a.team) - Number(b.team)
+            return parseMatchNumber(a["Scouting ID"]) - parseMatchNumber(b["Scouting ID"])
+          })
+
+          setMatchRows(filteredRows)
+        } catch (csvError) {
+          console.error('Error fetching match data from CSV fallback:', csvError)
+          alert('Failed to load match data.')
+        return
+      }
     } finally {
       setLoading(false)
     }

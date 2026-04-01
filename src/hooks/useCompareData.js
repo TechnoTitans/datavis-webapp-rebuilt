@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { parseMatchNumber, parseTeamNumber } from '../utils/helpers'
+import { fetchCSVData } from '../utils/csvHandler'
 
 const SCOUTER_TABLE_CANDIDATES = ['match_data', 'scouter_data']
 const OFFICIAL_TABLE_CANDIDATES = ['tba_data', 'tba_matches', 'statbotics_matches']
@@ -130,11 +131,7 @@ const isMissingTableError = (error) => {
 }
 
 const fetchTableRows = async (tableName) => {
-  const { data, error } = await supabase.from(tableName).select('*')
-  if (error) {
-    throw error
-  }
-  return data || []
+  return await fetchCSVData()
 }
 
 const fetchFromCandidateTables = async (tableCandidates) => {
