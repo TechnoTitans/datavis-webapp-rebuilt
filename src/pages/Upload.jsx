@@ -3,6 +3,7 @@ import { supabase, supabaseConfigured } from '../supabaseClient'
 import { canEditDatabase } from '../utils/permissions'
 import QrScanner from 'qr-scanner'
 import { approveUnconfirmedData, insertUnconfirmedData, rejectUnconfirmedData } from '../utils/offlineMutations'
+import { scannedDataToCSV, downloadAllData } from '../utils/csvHandler'
 import { toast } from 'sonner'
 
 function Upload() {
@@ -12,8 +13,11 @@ function Upload() {
   const [unconfirmedData, setUnconfirmedData] = useState([])
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [manualInput, setManualInput] = useState('')
+  const [localScannedCSV, setLocalScannedCSV] = useState('')
   const videoRef = useRef(null)
   const qrScannerRef = useRef(null)
+
+  const STORAGE_KEY = 'scannedDataCSV'
 
   useEffect(() => {
     setIsAuthenticated(canEditDatabase())
@@ -29,6 +33,11 @@ function Upload() {
   useEffect(() => {
     if (isAuthenticated) {
       fetchUnconfirmedData()
+    }
+    
+    const savedCSV = localStorage.getItem(STORAGE_KEY)
+    if (savedCSV) {
+      setLocalScannedCSV(savedCSV)
     }
   }, [isAuthenticated])
 
@@ -53,9 +62,20 @@ function Upload() {
       }
       
       setUnconfirmedData(data || [])
+      updateLocalCSV(data || [])
     } catch (error) {
       console.error('Error fetching unconfirmed data:', error)
       setMessage(`Error fetching data: ${error.message}`)
+    }
+  }
+
+  const updateLocalCSV = (data) => {
+    try {
+      const csvString = scannedDataToCSV(data)
+      setLocalScannedCSV(csvString)
+      localStorage.setItem(STORAGE_KEY, csvString)
+    } catch (error) {
+      console.error('Error updating local CSV:', error)
     }
   }
 
@@ -232,7 +252,9 @@ function Upload() {
       
       if (isAuthenticated) {
         if (result.queued) {
-          setUnconfirmedData(prev => [dataToInsert, ...(prev || [])])
+          const newData = [dataToInsert, ...(unconfirmedData || [])]
+          setUnconfirmedData(newData)
+          updateLocalCSV(newData)
         } else {
           fetchUnconfirmedData()
         }
@@ -261,9 +283,9 @@ function Upload() {
       }
 
       if (result.queued) {
-        setUnconfirmedData(prev =>
-          (prev || []).filter(row => row['Scouting ID'] !== unconfirmedItem['Scouting ID']),
-        )
+        const newData = (unconfirmedData || []).filter(row => row['Scouting ID'] !== unconfirmedItem['Scouting ID'])
+        setUnconfirmedData(newData)
+        updateLocalCSV(newData)
       } else {
         fetchUnconfirmedData()
       }
@@ -291,9 +313,9 @@ function Upload() {
       }
 
       if (result.queued) {
-        setUnconfirmedData(prev =>
-          (prev || []).filter(row => row['Scouting ID'] !== unconfirmedItem['Scouting ID']),
-        )
+        const newData = (unconfirmedData || []).filter(row => row['Scouting ID'] !== unconfirmedItem['Scouting ID'])
+        setUnconfirmedData(newData)
+        updateLocalCSV(newData)
       } else {
         fetchUnconfirmedData()
       }
@@ -301,6 +323,17 @@ function Upload() {
       console.error('Error rejecting data:', error)
       setMessage('Error rejecting data: ' + error.message)
       toast.error('Reject failed', { description: error.message })
+    }
+  }
+
+  const handleDownloadAllData = async () => {
+    try {
+      toast.message('Downloading...', { description: 'Preparing all data' })
+      await downloadAllData(unconfirmedData)
+      toast.success('Downloaded', { description: 'All data exported to CSV' })
+    } catch (error) {
+      console.error('Error downloading all data:', error)
+      toast.error('Download failed', { description: error.message })
     }
   }
 
@@ -382,6 +415,14 @@ function Upload() {
           <h3>Unconfirmed Data Management</h3>
           <p>Review and approve scanned data below:</p>
           
+          <button 
+            onClick={handleDownloadAllData}
+            className="download-all-button"
+            disabled={unconfirmedData.length === 0}
+          >
+            Download All Data (Past + Scanned)
+          </button>
+
           {unconfirmedData.length === 0 ? (
             <p>No unconfirmed data found.</p>
           ) : (
@@ -412,6 +453,16 @@ function Upload() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {localScannedCSV && (
+            <div className="scanned-csv-preview">
+              <h4>Local Scanned Data (CSV Format)</h4>
+              <p className="csv-info">This data is saved locally and will be included when you download all data</p>
+              <pre className="csv-display">
+                {localScannedCSV}
+              </pre>
             </div>
           )}
         </div>

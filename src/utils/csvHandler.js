@@ -130,3 +130,20 @@ export const getCSVHeaders = () => {
     'Broke Down?'
   ]
 }
+
+export const scannedDataToCSV = (scannedData) => {
+  const headers = getCSVHeaders()
+  return objectsToCSV(scannedData, headers)
+}
+
+export const downloadAllData = async (scannedData) => {
+  try {
+    const historicalData = await fetchCSVData()
+    const allData = [...historicalData, ...scannedData]
+    const headers = getCSVHeaders()
+    downloadCSV(allData, headers, `all_match_data_${new Date().toISOString().split('T')[0]}.csv`)
+  } catch (error) {
+    console.error('Error downloading all data:', error)
+    throw error
+  }
+}
