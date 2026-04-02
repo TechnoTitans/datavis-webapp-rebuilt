@@ -120,35 +120,30 @@ const fetchTeamOPR = async (teamNumber) => {
 }
 
 const calculateRatingStats = (teamRows, ratingFieldName) => {
-  // Map display name to database column name - remove spaces from field name
   const normalizedFieldName = ratingFieldName.replace(/\s+/g, '')
   const dbColumnName = `${normalizedFieldName} Rating`
   const values = teamRows
     .map(r => r[dbColumnName])
     .filter(v => typeof v === 'number' && !isNaN(v))
-  
+
   if (values.length === 0) return null
-  
+
   const avg = values.reduce((a, b) => a + b, 0) / values.length
+  if (avg === 0) return null
+
   const max = Math.max(...values)
   const min = Math.min(...values)
-  
+
   return {
     type: 'rating',
     average: avg.toFixed(2),
     max: max,
     min: min,
-    count: values.length
+    count: values.length,
   }
 }
 
-const formatRatingStats = (stats) => {
-  if (!stats) return '—'
-  return `Avg: ${stats.average} | Max: ${stats.max} | Min: ${stats.min}`
-}
-
 const calculateBooleanPercentage = (teamRows, fieldName) => {
-  // Map field name to database column with "?" suffix
   let dbColumnName
   if (fieldName === 'Broke Down') {
     dbColumnName = 'Broke Down?'
@@ -157,35 +152,91 @@ const calculateBooleanPercentage = (teamRows, fieldName) => {
   } else {
     dbColumnName = `${fieldName}?`
   }
-  
+
   const values = teamRows
     .map(r => r[dbColumnName])
     .filter(v => v !== null && v !== undefined)
-  
+
   if (values.length === 0) return null
-  
+
   const trueCount = values.filter(v => v === true).length
+  if (trueCount === 0) return null
+
   const percentage = ((trueCount / values.length) * 100).toFixed(1)
-  
+
   return {
     type: 'boolean',
     trueCount,
     totalCount: values.length,
-    percentage
+    percentage,
   }
 }
 
-const formatBooleanStats = (stats) => {
-  if (!stats) return '—'
-  return `True: ${stats.percentage}% (${stats.trueCount}/${stats.totalCount})`
+const getComparisonValue = (teamRows, teamSummary, field) => {
+  const isRatingField = RATING_FIELDS.includes(field)
+  const booleanFields = ['Penalties', 'Bump', 'Trench', 'Broke Down']
+  const isBooleanField = booleanFields.includes(field)
+
+  if (isRatingField) {
+    const stats = calculateRatingStats(teamRows, field)
+    return stats ? parseFloat(stats.average) : null
+  }
+  if (isBooleanField) {
+    const stats = calculateBooleanPercentage(teamRows, field)
+    return stats ? parseFloat(stats.percentage) : null
+  }
+  return getSummaryNumericValue(teamSummary, field)
+}
+
+const buildFieldColorMap = (teams, matchRows, summary, field) => {
+  if (teams.length < 2) return {}
+
+  const values = teams
+    .map(team => {
+      const teamRows = matchRows.filter(row => String(row.team) === String(team))
+      const val = getComparisonValue(teamRows, summary[team], field)
+      return { team, val }
+    })
+    .filter(({ val }) => val !== null)
+
+  if (values.length < 2) return {}
+
+  const max = Math.max(...values.map(v => v.val))
+  const min = Math.min(...values.map(v => v.val))
+
+  const colorMap = {}
+  for (const { team, val } of values) {
+    if (max === min) {
+      colorMap[team] = null
+    } else if (val === max) {
+      colorMap[team] = 'high'
+    } else if (val === min) {
+      colorMap[team] = 'low'
+    } else {
+      colorMap[team] = 'mid'
+    }
+  }
+  return colorMap
+}
+
+const RANK_COLOR_STYLES = {
+  high: { color: '#16a34a', fontWeight: '700' },
+  mid: { color: '#ca8a04', fontWeight: '700' },
+  low: { color: '#dc2626', fontWeight: '700' },
+}
+
+// Returns null for any value that is zero (numeric or string), otherwise returns the value as-is
+const zeroToNull = (value) => {
+  if (value === null || value === undefined) return null
+  const num = Number(value)
+  return Number.isFinite(num) && num === 0 ? null : value
 }
 
 function Compare() {
   const navigate = useNavigate()
 
-  // State management with custom hooks
   const [selectedTeams, setSelectedTeams] = useSelectedTeams('selectedTeams', [])
-  const [selectedStat, setSelectedStat] = useLocalStorage('selectedStat', '', (v) => v, (v) => v) // string values
+  const [selectedStat, setSelectedStat] = useLocalStorage('selectedStat', '', (v) => v, (v) => v)
   const [useMaxValues, setUseMaxValues] = useLocalStorage('compareUseMax', false)
   const [sourceMode, setSourceMode] = useLocalStorage(
     'compareSourceMode',
@@ -199,8 +250,8 @@ function Compare() {
   const [showStatGrid, setShowStatGrid] = useState(false)
   const [expandedCells, setExpandedCells] = useState(new Set())
   const [oprData, setOprData] = useState({})
+  const [pinnedField, setPinnedField] = useState(null)
 
-  // Ensure selectedTeams/scouters are always arrays
   const safeSelectedTeams = useMemo(
     () => (Array.isArray(selectedTeams) ? selectedTeams : []),
     [selectedTeams],
@@ -210,7 +261,6 @@ function Compare() {
     [selectedScouters],
   )
 
-  // Use compare data hook with source selection
   const {
     allTeams,
     matchRows,
@@ -225,7 +275,6 @@ function Compare() {
     selectedScouters: safeSelectedScouters,
   })
 
-  // Use team summary hook
   const summary = useTeamSummary(matchRows, useMaxValues)
 
   const availableFields = useMemo(() => {
@@ -243,7 +292,6 @@ function Compare() {
     }
   }, [availableFields, selectedStat, setSelectedStat])
 
-  // Fetch OPR data for selected teams
   useEffect(() => {
     const fetchOPRForTeams = async () => {
       if (!safeSelectedTeams.length) {
@@ -263,6 +311,23 @@ function Compare() {
     fetchOPRForTeams()
   }, [safeSelectedTeams])
 
+  const fieldColorMaps = useMemo(() => {
+    const maps = {}
+    for (const field of COMPARE_STAT_FIELDS) {
+      maps[field] = buildFieldColorMap(safeSelectedTeams, matchRows, summary, field)
+    }
+    return maps
+  }, [safeSelectedTeams, matchRows, summary])
+
+  const sortedFields = useMemo(() => {
+    if (!pinnedField) return availableFields
+    return [pinnedField, ...availableFields.filter(f => f !== pinnedField)]
+  }, [availableFields, pinnedField])
+
+  const handleFieldDoubleClick = (field) => {
+    setPinnedField(prev => prev === field ? null : field)
+  }
+
   const handleScouterToggle = (scouterName) => {
     const normalized = String(scouterName)
     setSelectedScouters((prev) => {
@@ -274,11 +339,9 @@ function Compare() {
     })
   }
 
-  // Event handlers
   const handleTeamToggle = (teamNumber) => {
     const teamStr = String(teamNumber)
     setSelectedTeams(prev => {
-      // Ensure prev is an array
       const prevArray = Array.isArray(prev) ? prev : []
       if (prevArray.includes(teamStr)) {
         return prevArray.filter(t => t !== teamStr)
@@ -459,6 +522,36 @@ function Compare() {
             <span>Only include rows where `Use Data` is true</span>
           </label>
         ) : null}
+
+        {sourceMode !== 'tba' && scouterNames.length > 0 ? (
+          <div className="compare-scouter-filter">
+            <div className="compare-scouter-filter-header">
+              <span className="compare-control-label">Scouter Filter</span>
+              <button
+                className="action-btn clear-all"
+                onClick={() => setSelectedScouters([])}
+                type="button"
+              >
+                Clear
+              </button>
+            </div>
+            <div className="compare-scouter-grid">
+              {scouterNames.map((name) => {
+                const checked = safeSelectedScouters.includes(name)
+                return (
+                  <label key={name} className={`compare-scouter-chip ${checked ? 'selected' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => handleScouterToggle(name)}
+                    />
+                    <span>{name}</span>
+                  </label>
+                )
+              })}
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <TeamSelector
@@ -470,7 +563,7 @@ function Compare() {
       />
 
       {noDataDiagnostic ? (
-      <div className="compare-empty-state-panel">
+        <div className="compare-empty-state-panel">
           <div className="compare-empty-state-header">
             <h2 className="compare-empty-state-title">Why Data Might Be Missing</h2>
             <button type="button" className="action-btn clear-all" onClick={resetCompareFilters}>
@@ -493,120 +586,161 @@ function Compare() {
       <div className="compare-summary-section">
         <div className="compare-summary-header">
           <h2 className="compare-summary-title">Summaries</h2>
-          {/**
-          <label className="toggle-container">
-            <input
-              type="checkbox"
-              checked={useMaxValues}
-              onChange={(e) => setUseMaxValues(e.target.checked)}
-            />
-            <span className="toggle-text">Show Max Values (instead of Average)</span>
-          </label>*/}
         </div>
         {Object.keys(summary).length === 0 ? (
           <p>{noDataDiagnostic?.reasons?.[0] || 'No data to summarize.'}</p>
         ) : (
-          <>
-            <div className="summary-container" data-count={safeSelectedTeams.length}>
+          <div className="summary-container" data-count={safeSelectedTeams.length}>
             {safeSelectedTeams.map(team => {
-              // Get team rows for rating calculations
               const teamRows = matchRows.filter(row => String(row.team) === String(team))
-              
+
               return summary[team] ? (
-                <div key={team} className="summary-table">
-                  <h3 
-                    className="team-header-clickable" 
+                <div key={team} className="summary-card">
+                  <h3
+                    className="team-header-clickable"
                     onClick={() => handleTeamClick(team)}
                   >
                     Team {team}
                   </h3>
+
                   {oprData[team] !== undefined && (
                     <div style={{ padding: '0.5rem 0.75rem', backgroundColor: 'rgba(219, 234, 254, 0.82)', borderBottom: '1px solid rgba(148, 163, 184, 0.28)', fontWeight: 600 }}>
                       <strong>OPR (The Blue Alliance):</strong> {oprData[team] !== null ? oprData[team].toFixed(2) : 'N/A'}
                     </div>
                   )}
+
+                  {/* Unified stats table with Avg / Min / Max columns for rating fields */}
                   <table>
                     <thead>
                       <tr>
                         <th>Field</th>
-                        <th>Summary</th>
+                        <th>Avg</th>
+                        <th>Min</th>
+                        <th>Max</th>
+                        <th>Details</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {availableFields.map(field => {
-                        // Check if this is a rating field
+                      {sortedFields.map(field => {
                         const isRatingField = RATING_FIELDS.includes(field)
-                        
-                        // Check if this is a boolean field
                         const booleanFields = ['Penalties', 'Bump', 'Trench', 'Broke Down']
                         const isBooleanField = booleanFields.includes(field)
-                        
-                        // For rating fields, always calculate stats
+
+                        const rankLabel = fieldColorMaps[field]?.[team]
+                        const rankStyle = rankLabel ? RANK_COLOR_STYLES[rankLabel] : undefined
+
+                        const isPinned = pinnedField === field
+                        const fieldCellStyle = isPinned
+                          ? { fontWeight: 700, color: '#6366f1', cursor: 'pointer', userSelect: 'none' }
+                          : { cursor: 'pointer', userSelect: 'none' }
+
                         if (isRatingField) {
                           const ratingStats = calculateRatingStats(teamRows, field)
-                          if (ratingStats) {
-                            const displayValue = formatRatingStats(ratingStats)
-                            return (
-                              <tr key={field}>
-                                <td 
-                                  className={expandedCells.has(`${team}-${field}`) ? 'expanded' : ''}
-                                  onClick={() => handleCellClick(team, field)}
-                                >
-                                  {field}
-                                </td>
-                                <td
-                                  className={expandedCells.has(`${team}-${field}-value`) ? 'expanded' : ''}
-                                  onClick={() => handleCellClick(team, `${field}-value`)}
-                                >
-                                  {displayValue}
-                                </td>
-                              </tr>
-                            )
-                          }
-                          return null
-                        }
-                        
-                        // For boolean fields, calculate percentages
-                        if (isBooleanField) {
-                          const booleanStats = calculateBooleanPercentage(teamRows, field)
-                          // Show row even if no data, with N/A
-                          const displayValue = booleanStats ? formatBooleanStats(booleanStats) : 'N/A'
+                          if (!ratingStats) return null
                           return (
                             <tr key={field}>
-                              <td 
-                                className={expandedCells.has(`${team}-${field}`) ? 'expanded' : ''}
-                                onClick={() => handleCellClick(team, field)}
-                              >
-                                {field}
-                              </td>
                               <td
-                                className={expandedCells.has(`${team}-${field}-value`) ? 'expanded' : ''}
-                                onClick={() => handleCellClick(team, `${field}-value`)}
+                                style={fieldCellStyle}
+                                onClick={() => handleCellClick(team, field)}
+                                onDoubleClick={() => handleFieldDoubleClick(field)}
+                                title="Double-click to pin this field to the top"
                               >
-                                {displayValue}
+                                {isPinned ? ' ' : ''}{field}
+                              </td>
+                              <td style={rankStyle || {}}>{ratingStats.average}</td>
+                              <td>{ratingStats.min}</td>
+                              <td>{ratingStats.max}</td>
+                              <td>Rating ({ratingStats.count} matches)</td>
+                            </tr>
+                          )
+                        }
+
+                        if (isBooleanField) {
+                          const booleanStats = calculateBooleanPercentage(teamRows, field)
+                          return (
+                            <tr key={field}>
+                              <td
+                                style={fieldCellStyle}
+                                onClick={() => handleCellClick(team, field)}
+                                onDoubleClick={() => handleFieldDoubleClick(field)}
+                                title="Double-click to pin this field to the top"
+                              >
+                                {isPinned ? ' ' : ''}{field}
+                              </td>
+                              <td colSpan={3} style={rankStyle || {}}>
+                                {booleanStats
+                                  ? <span style={rankStyle || {}}>{booleanStats.percentage}%</span>
+                                  : 'N/A'}
+                              </td>
+                              <td>
+                                {booleanStats
+                                  ? `${booleanStats.trueCount} / ${booleanStats.totalCount} matches`
+                                  : '—'}
                               </td>
                             </tr>
                           )
                         }
-                        
-                        // For other fields, use summary
+
                         if (!summary[team][field]) return null
-                        
-                        const displayValue = formatMetricSummary(summary[team][field])
+                        const metric = summary[team][field]
+
+                        if (metric.type === 'scoring') {
+                          const attempts = Number(metric.avgAttempts)
+                          const made = Number(metric.average)
+                          const attemptsLabel = Number.isFinite(attempts) ? attempts.toFixed(2) : String(metric.avgAttempts)
+                          const madeLabel = zeroToNull(Number.isFinite(made) ? made.toFixed(2) : null)
+                          if (!madeLabel) return null
+                          return (
+                            <tr key={field}>
+                              <td
+                                style={fieldCellStyle}
+                                onClick={() => handleCellClick(team, field)}
+                                onDoubleClick={() => handleFieldDoubleClick(field)}
+                                title="Double-click to pin this field to the top"
+                              >
+                                {isPinned ? ' ' : ''}{field}
+                              </td>
+                              <td style={rankStyle || {}}>{madeLabel}</td>
+                              <td colSpan={2}>—</td>
+                              <td>{attemptsLabel} attempts · {metric.successRate}% success</td>
+                            </tr>
+                          )
+                        }
+
+                        if (metric.type === 'number') {
+                          const value = Number(metric.value)
+                          const displayValue = zeroToNull(Number.isFinite(value) ? value.toFixed(2) : null)
+                          if (!displayValue) return null
+                          return (
+                            <tr key={field}>
+                              <td
+                                style={fieldCellStyle}
+                                onClick={() => handleCellClick(team, field)}
+                                onDoubleClick={() => handleFieldDoubleClick(field)}
+                                title="Double-click to pin this field to the top"
+                              >
+                                {isPinned ? ' ' : ''}{field}
+                              </td>
+                              <td style={rankStyle || {}}>{displayValue}</td>
+                              <td colSpan={2}>—</td>
+                              <td>—</td>
+                            </tr>
+                          )
+                        }
+
+                        // boolean-like fallback (percent)
                         return (
                           <tr key={field}>
-                            <td 
-                              className={expandedCells.has(`${team}-${field}`) ? 'expanded' : ''}
-                              onClick={() => handleCellClick(team, field)}
-                            >
-                              {field}
-                            </td>
                             <td
-                              className={expandedCells.has(`${team}-${field}-value`) ? 'expanded' : ''}
-                              onClick={() => handleCellClick(team, `${field}-value`)}
+                              style={fieldCellStyle}
+                              onClick={() => handleCellClick(team, field)}
+                              onDoubleClick={() => handleFieldDoubleClick(field)}
+                              title="Double-click to pin this field to the top"
                             >
-                              {displayValue}
+                              {isPinned ? ' ' : ''}{field}
                             </td>
+                            <td colSpan={3} style={rankStyle || {}}>{metric.value} ({metric.percent}%)</td>
+                            <td>—</td>
                           </tr>
                         )
                       })}
@@ -615,8 +749,7 @@ function Compare() {
                 </div>
               ) : null
             })}
-            </div>
-          </>
+          </div>
         )}
       </div>
     </div>

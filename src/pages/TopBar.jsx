@@ -14,20 +14,20 @@ function Layout({ children }) {
     { to: '/team-data', label: 'Team Data' },
     { to: '/qual-data', label: 'Qual Data' },
     { to: '/pit-scouting-data', label: 'Pit Scouting Data'},
-    { to: '/statbotics-data', label: 'Statbotics Data' },
+    //{ to: '/statbotics-data', label: 'Statbotics Data' },
     { to: '/TBA-data', label: 'TBA Data' },
     { to: '/compare', label: 'Compare' },
     { to: '/team-analysis', label: 'Team Analysis' },
     { to: '/auto-paths', label: 'Auto Paths' },
-    { to: '/match-strategy', label: 'Match Strategy' },
-    { to: '/rankings', label: 'Rankings' },
+    //{ to: '/match-strategy', label: 'Match Strategy' },
+    //{ to: '/rankings', label: 'Rankings' },
     { to: '/picklist', label: 'Picklist' },
     { to: '/upload', label: 'Upload' },
     { to: '/settings', label: 'Settings' },
   ]
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-hidden">
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/95">
         <div className="mx-auto w-full max-w-6xl px-6 py-3">
           <div className="grid grid-cols-[auto,1fr,auto] items-center gap-4">
@@ -144,12 +144,10 @@ function Layout({ children }) {
             </div>
           </div>
         ) : null}
-
-        {/* Env warning removed at user request */}
       </header>
 
-      <main className="mx-auto w-full max-w-6xl px-6 py-10">
-        <section className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm md:p-8">
+      <main className="mx-auto w-full max-w-6xl px-6 py-10 min-w-0">
+        <section className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm md:p-8 min-w-0">
           {children}
         </section>
       </main>

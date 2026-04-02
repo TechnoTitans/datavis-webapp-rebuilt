@@ -96,7 +96,7 @@ function QualData() {
               <input
                 value={matchFilter}
                 onChange={e => setMatchFilter(e.target.value)}
-                placeholder="Match name/number"
+                placeholder=" Match name/number"
                 className="filter-input"
               />
             </label>

@@ -65,7 +65,7 @@ export const useTeamData = (selectedTeams = [], useDataOnly = false) => {
       let filteredRows = []
       for (const row of data) {
         const teamNumber = parseTeamNumber(row["Scouting ID"])
-        if (teamNumber && selectedTeams.includes(Number(teamNumber))) {
+        if (teamNumber && selectedTeams.includes(String(teamNumber))) {
           filteredRows.push({ ...row, team: Number(teamNumber) })
         }
       }

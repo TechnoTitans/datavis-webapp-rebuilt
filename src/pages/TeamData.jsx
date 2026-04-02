@@ -12,7 +12,14 @@ function TeamData() {
   const { allTeams, matchRows, loading, setMatchRows } = useTeamData(safeSelectedTeams, true)
 
   const handleTeamToggle = (teamNumber) => {
-    setSelectedTeams([teamNumber])
+    const teamStr = String(teamNumber)
+    setSelectedTeams(prev => {
+      const prevArray = Array.isArray(prev) ? prev : []
+      if (prevArray.includes(teamStr)) {
+        return prevArray.filter(t => t !== teamStr)
+      }
+      return [...prevArray, teamStr]
+    })
   }
 
   const clearAllTeams = () => {
@@ -27,7 +34,7 @@ function TeamData() {
         const result = await updateMatchUseData({ scoutingId, value: checked })
         if (result?.error) {
           console.error('Error updating Use Data:', result.error)
-          toast.error('Could not update “Use Data”.')
+          toast.error('Could not update "Use Data".')
           return
         }
 
@@ -42,7 +49,7 @@ function TeamData() {
           toast.message('Saved offline', { description: 'Change queued and will sync when online.' })
         } else {
           console.log('Database updated successfully')
-          toast.success('Saved', { description: '“Use Data” updated.' })
+          toast.success('Saved', { description: '"Use Data" updated.' })
         }
       })
     } catch (error) {
@@ -56,6 +63,7 @@ function TeamData() {
     return `${selectedTeams.length} Teams`
   }
 
+  const EXCLUDED_COLUMNS = ['Use Data', 'team', 'Scouting ID', 'Shot Coordinates']
 
   return (
     <div>
@@ -78,58 +86,55 @@ function TeamData() {
         ) : (
           <div className="team-data-container">
             {selectedTeams.map(team => {
-              const teamRows = matchRows.filter(row => row.team === team)
+              const teamRows = matchRows.filter(row => String(row.team) === String(team))
               if (teamRows.length === 0) return null
-              
+              const visibleCols = Object.keys(teamRows[0]).filter(
+                col => !EXCLUDED_COLUMNS.includes(col)
+              )
+
               return (
                 <div key={team} className="team-data-table-section">
                   <h3 className="team-header">Team {team}</h3>
                   <div className="team-data-table-container">
-                    <div className="table-wrapper">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th className="sticky-column">Use Data</th>
-                            <th className="second-column">Scouting ID</th>
-                            {Object.keys(teamRows[0])
-                              .filter(col => col !== 'Use Data' && col !== 'team' && col !== 'Scouting ID')
-                              .map(col => (
-                                <th key={col}>{col}</th>
-                              ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {teamRows.map((row, idx) => (
-                            <tr key={row["Scouting ID"] ?? row.id ?? idx}>
-                              <td className="sticky-column">
-                                <input
-                                  type="checkbox"
-                                  checked={!!row['Use Data']}
-                                  onChange={e => handleUseDataChange(row["Scouting ID"], e.target.checked)}
-                                />
-                              </td>
-                              <td className="second-column">
-                                {String(row['Scouting ID'] || '')}
-                              </td>
-                              {Object.keys(teamRows[0])
-                                .filter(col => col !== 'Use Data' && col !== 'team' && col !== 'Scouting ID')
-                                .map(col => {
-                                  let val = row[col];
-                                  if (typeof val === 'boolean' || val === null) {
-                                    val = String(val);
-                                  }
-                                  const displayVal = String(val);
-                                  return (
-                                    <td key={col}>
-                                      {displayVal}
-                                    </td>
-                                  )
-                                })}
-                            </tr>
+                    <table style={{ width: 'max-content', minWidth: '100%' }}>
+                      <thead>
+                        <tr>
+                          <th className="sticky-column">Use Data</th>
+                          <th className="second-column">Scouting ID</th>
+                          {visibleCols.map(col => (
+                            <th key={col}>{col}</th>
                           ))}
-                        </tbody>
-                      </table>
-                    </div>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {teamRows.map((row, idx) => (
+                          <tr key={row["Scouting ID"] ?? row.id ?? idx}>
+                            <td className="sticky-column">
+                              <input
+                                type="checkbox"
+                                checked={!!row['Use Data']}
+                                onChange={e => handleUseDataChange(row["Scouting ID"], e.target.checked)}
+                              />
+                            </td>
+                            <td className="second-column">
+                              {String(row['Scouting ID'] || '')}
+                            </td>
+                            {visibleCols.map(col => {
+                              let val = row[col]
+                              if (typeof val === 'boolean' || val === null) {
+                                val = String(val)
+                              }
+                              const displayVal = String(val)
+                              return (
+                                <td key={col} title={displayVal}>
+                                  {displayVal}
+                                </td>
+                              )
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )

@@ -53,22 +53,29 @@ table td[title]:hover {
 .team-data-table-container {
   position: relative;
   overflow-x: auto;
+  overflow-y: auto;
+  max-width: 100%;
   border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.95);
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
 }
 
-.table-wrapper {
-  overflow-x: auto;
+/* Scrollbar styling to match your statbotics container */
+.team-data-table-container::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
 }
 
-.team-data-table-container table {
-  min-width: 100%;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
+.team-data-table-container::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.6);
+  border-radius: 10px;
 }
 
+.team-data-table-container::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.8);
+}
 /* Sticky columns used by TeamData/Settings */
 .sticky-column {
   position: sticky;

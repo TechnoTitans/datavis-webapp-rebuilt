@@ -340,7 +340,10 @@ function Picklist() {
     try {
       const events = await getPicklistEventKeys()
       setEventKeys(events)
-      setSelectedEvent((current) => (events.includes(current) ? current : events[0] || ''))
+      setSelectedEvent((current) => {
+        if (events.some((e) => e.key === current)) return current
+        return events[0]?.key || ''
+      })
     } catch (error) {
       console.error('[Picklist] Failed loading event keys:', error)
       toast.error(`Could not load events: ${error.message || error}`)
@@ -514,21 +517,38 @@ function Picklist() {
     if (!target) return
 
     if (activeId.startsWith(MASTER_PREFIX)) {
-      const teamNumber = parseDragNumber(activeId, MASTER_PREFIX);
-      if (teamNumber === null) return;
-    
-      const targetList = lists.find((list) => list.id === target.listId);
-      if (!targetList) return;
-    
-      const isTeamAlreadyInList = targetList.entries.some(
-        (entry) => entry.teamNumber === teamNumber
-      );
-      if (isTeamAlreadyInList) {
-        toast.message(`Team ${teamNumber} is already in "${targetList.title}".`);
-        return;
+      const teamNumber = parseDragNumber(activeId, MASTER_PREFIX)
+      if (teamNumber === null) return
+
+      const targetList = lists.find((list) => list.id === target.listId)
+      if (!targetList) return
+
+      if (targetList.entries.some((entry) => entry.teamNumber === teamNumber)) {
+        toast.message(`Team ${teamNumber} is already in "${targetList.title}".`)
+        return
       }
-    
-      await runProtectedWrite(
+
+      const tempId = -(Date.now())
+      const optimisticEntry = {
+        id: tempId,
+        listId: target.listId,
+        teamNumber,
+        position: target.index,
+        note: '',
+      }
+      const insertAt = target.index
+      setBoard((prev) => ({
+        ...prev,
+        lists: prev.lists.map((list) => {
+          if (list.id !== target.listId) return list
+          const updated = [...list.entries]
+          updated.splice(insertAt, 0, optimisticEntry)
+          return { ...list, entries: updated }
+        }),
+      }))
+
+      const savedBoard = board
+      const ok = await runProtectedWrite(
         async (passcode) => {
           await addPicklistEntry({
             listId: target.listId,
@@ -536,40 +556,48 @@ function Picklist() {
             targetPosition: target.index,
             note: '',
             passcode,
-          });
+          })
         },
-        { reload: true }
-      );
-      return;
+        { reload: true },
+      )
+      if (!ok) setBoard(savedBoard)
+      return
     }
-    
+
     if (activeId.startsWith(ENTRY_PREFIX)) {
-      const entryId = parseDragNumber(activeId, ENTRY_PREFIX);
-      if (entryId === null) return;
-    
-      const source = getEntryLocation(entryId, lists);
-      if (!source) return;
-    
-      const sourceList = lists.find((list) => list.id === source.listId);
-      const targetList = lists.find((list) => list.id === target.listId);
-      if (!sourceList || !targetList) return;
-    
+      const entryId = parseDragNumber(activeId, ENTRY_PREFIX)
+      if (entryId === null) return
+
+      const source = getEntryLocation(entryId, lists)
+      if (!source) return
+
+      const sourceList = lists.find((list) => list.id === source.listId)
+      const targetList = lists.find((list) => list.id === target.listId)
+      if (!sourceList || !targetList) return
+
       if (source.listId === target.listId) {
-        let targetIndex = target.index;
+        let targetIndex = target.index
         if (target.isListContainer) {
-          targetIndex = sourceList.entries.length - 1;
+          targetIndex = sourceList.entries.length - 1
         }
-        if (targetIndex < 0 || source.index === targetIndex) return;
-    
+        if (targetIndex < 0 || source.index === targetIndex) return
+
+        setBoard((prev) => ({
+          ...prev,
+          lists: prev.lists.map((list) => {
+            if (list.id !== source.listId) return list
+            return { ...list, entries: arrayMove(list.entries, source.index, targetIndex) }
+          }),
+        }))
+
         const reorderedIds = arrayMove(
           sourceList.entries.map((entry) => entry.id),
           source.index,
-          targetIndex
-        );
-    
-        // Additional logic for reordering can be added here
-    ç
-        await runProtectedWrite(
+          targetIndex,
+        )
+
+        const savedBoard = board
+        const ok = await runProtectedWrite(
           async (passcode) => {
             await reorderPicklistEntries({
               listId: sourceList.id,
@@ -577,17 +605,34 @@ function Picklist() {
               passcode,
             })
           },
-          { reload: true },
+          { reload: false },
         )
+        if (!ok) setBoard(savedBoard)
       } else {
         const movingEntry = sourceList.entries[source.index]
         if (!movingEntry) return
-        if (targetList.entries.some(entry => entry.teamNumber === movingEntry.teamNumber)) {
+        if (targetList.entries.some((entry) => entry.teamNumber === movingEntry.teamNumber)) {
           toast.message(`Team ${movingEntry.teamNumber} is already in "${targetList.title}".`)
           return
         }
 
-        await runProtectedWrite(
+        setBoard((prev) => ({
+          ...prev,
+          lists: prev.lists.map((list) => {
+            if (list.id === source.listId) {
+              return { ...list, entries: list.entries.filter((e) => e.id !== movingEntry.id) }
+            }
+            if (list.id === target.listId) {
+              const updated = [...list.entries]
+              updated.splice(target.index, 0, { ...movingEntry, listId: target.listId })
+              return { ...list, entries: updated }
+            }
+            return list
+          }),
+        }))
+
+        const savedBoard = board
+        const ok = await runProtectedWrite(
           async (passcode) => {
             await movePicklistEntry({
               entryId: movingEntry.id,
@@ -598,9 +643,10 @@ function Picklist() {
           },
           { reload: true },
         )
+        if (!ok) setBoard(savedBoard)
       }
     }
-  }, [board.lists, getEntryLocation, isUnlocked, resolveDropTarget, runProtectedWrite])
+  }, [board, getEntryLocation, isUnlocked, resolveDropTarget, runProtectedWrite])
 
   const handleSetInitialPasscode = async () => {
     if (setPasscodeValue.length < 4) {
@@ -825,8 +871,8 @@ function Picklist() {
             className="picklist-select"
           >
             {eventKeys.length === 0 ? <option value="">No events available</option> : null}
-            {eventKeys.map(eventKey => (
-              <option key={eventKey} value={eventKey}>{eventKey}</option>
+            {eventKeys.map((event) => (
+              <option key={event.key} value={event.key}>{event.name}</option>
             ))}
           </select>
           <Button
