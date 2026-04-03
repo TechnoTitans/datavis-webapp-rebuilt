@@ -6,7 +6,6 @@ import Loading from '../components/Loading'
 import { useSelectedTeams, useLocalStorage } from '../hooks/useLocalStorage'
 import { useTeamSummary } from '../hooks/useTeamSummary'
 import { useCompareData } from '../hooks/useCompareData'
-import { supabaseConfigured } from '../supabaseClient'
 import { EVENT_KEY } from '../constants/scoring'
 
 const SOURCE_OPTIONS = [
@@ -264,10 +263,7 @@ function Compare() {
   const {
     allTeams,
     matchRows,
-    loading,
-    error,
-    officialTableUsed,
-    diagnostics,
+    scouterNames = [],
   } = useCompareData({
     selectedTeams: safeSelectedTeams,
     sourceMode,
@@ -414,80 +410,6 @@ function Compare() {
       .filter(Boolean)
   }, [safeSelectedTeams, summary])
 
-  const noDataDiagnostic = useMemo(() => {
-    if (loading || error) return null
-
-    const reasons = []
-    const actions = []
-
-    if (!supabaseConfigured) {
-      reasons.push('Supabase is not configured in this running app.')
-      actions.push('Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_KEY` in `.env` and restart `npm run dev`.')
-    }
-
-    if (safeSelectedTeams.length === 0) {
-      reasons.push('No teams selected yet.')
-      actions.push('Pick at least one team in "Select Teams to Compare".')
-    }
-
-    if (allTeams.length === 0) {
-      if (sourceMode !== 'tba' && useDataOnly && diagnostics.scouterRawRows > 0 && diagnostics.scouterRowsAfterUseData === 0) {
-        reasons.push('Scouting rows exist, but all were filtered out by `Use Data = true`.')
-        actions.push('Uncheck "Only include rows where Use Data is true" to see teams immediately.')
-        actions.push('Or set `Use Data` to true for rows in Team Data / Settings.')
-      } else if (sourceMode === 'tba') {
-        reasons.push('No official rows found for TBA source.')
-        actions.push('Load data into `tba_data`, `tba_matches`, or `statbotics_matches`.')
-      } else if (sourceMode === 'scouter') {
-        reasons.push('No scouter rows found for scouting source.')
-        actions.push('Check that `match_data` has rows and that RLS/select permissions allow reads.')
-      } else {
-        reasons.push('No rows found in either scouter or TBA sources.')
-        actions.push('Load scouting data and/or TBA data, then refresh Compare.')
-      }
-    }
-
-    if (safeSelectedTeams.length > 0 && matchRows.length === 0) {
-      reasons.push('Selected teams have no rows after current filters are applied.')
-      actions.push('Try "Clear All" teams and re-select teams that exist in this source.')
-      if (sourceMode !== 'tba' && useDataOnly) {
-        actions.push('Temporarily uncheck "Only include rows where Use Data is true".')
-      }
-      if (sourceMode !== 'tba' && safeSelectedScouters.length > 0) {
-        actions.push('Clear scouter filter chips to include all scouters.')
-      }
-    }
-
-    if (diagnostics.totalRowsBeforeTeamFilter > 0 && matchRows.length === 0 && safeSelectedTeams.length === 0) {
-      reasons.push('Rows exist, but current scouter filter chips exclude them.')
-      actions.push('Clear scouter filter chips.')
-    }
-
-    if (sourceMode === 'tba' && !officialTableUsed) {
-      reasons.push('No TBA table was detected in this project connection.')
-      actions.push('Create one of: `tba_data`, `tba_matches`, or `statbotics_matches`.')
-    }
-
-    if (reasons.length === 0 && actions.length === 0) return null
-
-    return {
-      reasons: Array.from(new Set(reasons)),
-      actions: Array.from(new Set(actions)),
-    }
-  }, [
-    allTeams.length,
-    diagnostics.scouterRawRows,
-    diagnostics.scouterRowsAfterUseData,
-    diagnostics.totalRowsBeforeTeamFilter,
-    error,
-    loading,
-    matchRows.length,
-    officialTableUsed,
-    safeSelectedScouters.length,
-    safeSelectedTeams.length,
-    sourceMode,
-    useDataOnly,
-  ])
 
   return (
     <div className="compare-container">
@@ -562,33 +484,13 @@ function Compare() {
         title="Select Teams to Compare"
       />
 
-      {noDataDiagnostic ? (
-        <div className="compare-empty-state-panel">
-          <div className="compare-empty-state-header">
-            <h2 className="compare-empty-state-title">Why Data Might Be Missing</h2>
-            <button type="button" className="action-btn clear-all" onClick={resetCompareFilters}>
-              Reset Compare Filters
-            </button>
-          </div>
-          <ul className="compare-empty-list">
-            {noDataDiagnostic.reasons.map((reason) => (
-              <li key={reason}>{reason}</li>
-            ))}
-          </ul>
-          <ul className="compare-empty-list compare-empty-list-actions">
-            {noDataDiagnostic.actions.map((action) => (
-              <li key={action}>{action}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
 
       <div className="compare-summary-section">
         <div className="compare-summary-header">
           <h2 className="compare-summary-title">Summaries</h2>
         </div>
         {Object.keys(summary).length === 0 ? (
-          <p>{noDataDiagnostic?.reasons?.[0] || 'No data to summarize.'}</p>
+          <p>No data to summarize.</p>
         ) : (
           <div className="summary-container" data-count={safeSelectedTeams.length}>
             {safeSelectedTeams.map(team => {

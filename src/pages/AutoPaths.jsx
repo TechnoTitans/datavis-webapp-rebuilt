@@ -155,12 +155,10 @@ function AutoPaths() {
   const [selectedTeams, setSelectedTeams] = useSelectedTeams('selectedTeamsAutoPaths', [])
   const safeSelectedTeams = Array.isArray(selectedTeams) ? selectedTeams : []
   
+
   const dummyTeams = safeSelectedTeams.length > 0 ? safeSelectedTeams : ['0']
-  const { allTeams, matchRows: allMatchRows, loading } = useTeamData(dummyTeams, true)
-  
-  const matchRows = safeSelectedTeams.length > 0 
-    ? allMatchRows.filter(row => safeSelectedTeams.includes(Number(row['Scouting ID'].split("_")[1])))
-    : allMatchRows
+  const { allTeams, matchRows, loading } = useTeamData(dummyTeams, true)
+
 
   const handleTeamToggle = (team) => {
     const teamNum = Number(team);
@@ -175,6 +173,10 @@ function AutoPaths() {
 
   const clearAllTeams = () => {
     setSelectedTeams([])
+  }
+
+  if (loading) {
+    return <Loading />
   }
 
   return (
@@ -196,7 +198,7 @@ function AutoPaths() {
           <strong>Select Match Number:</strong>
           {safeSelectedTeams.length === 1 && (() => {
             const team = safeSelectedTeams[0];
-            const teamMatches = matchRows.filter(row => String(row['Scouting ID'].split('_')[1]) === String(team));
+            const teamMatches = matchRows.filter(row => Number(row['Scouting ID'].split('_')[1]) === Number(team));
             const matchNumbers = teamMatches.map(row => {
               const scoutingId = row['Scouting ID'];
               const parts = scoutingId.split('_');

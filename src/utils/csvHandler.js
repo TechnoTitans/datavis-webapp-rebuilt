@@ -13,7 +13,16 @@ export const parseCSV = (csvText) => {
     const row = {}
 
     headers.forEach((header, index) => {
-      row[header] = values[index] ? values[index].trim() : ''
+      let value = values[index] ? values[index].trim() : ''
+      
+      if (header.includes('Rating')) {
+        value = parseInt(value, 10)
+        if (isNaN(value)) value = null
+      } else if (header.endsWith('?')) {
+        value = value === 'true'
+      }
+      
+      row[header] = value
     })
 
     rows.push(row)
