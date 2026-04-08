@@ -16,6 +16,7 @@ import Picklist from './pages/Picklist'
 import Upload from './pages/Upload'
 import TeamAnalysis from './pages/TeamAnalysis'
 import AutoPaths from './pages/AutoPaths'
+import PrescoutingData from './pages/PrescoutingData'
 
 function App() {
   return (
@@ -25,7 +26,8 @@ function App() {
           <Route path="/" element={<TeamData />} />
           <Route path="/team-data" element={<TeamData />} />
           <Route path="/qual-data" element={<QualData />} />
-          <Route path="/pit-scouting-data" element={<PitScoutingData />} /> 
+          <Route path="/pit-scouting-data" element={<PitScoutingData />} />
+          <Route path="/prescouting-data" element={<PrescoutingData />} />
           <Route path="/statbotics-data" element={<StatboticsData />} /> 
           <Route path="/TBA-data" element={<TBAData />} /> 
           <Route path="/compare" element={<Compare />} />

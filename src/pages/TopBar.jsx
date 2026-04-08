@@ -14,6 +14,7 @@ function Layout({ children }) {
     { to: '/team-data', label: 'Team Data' },
     { to: '/qual-data', label: 'Qual Data' },
     { to: '/pit-scouting-data', label: 'Pit Scouting Data'},
+    { to: '/prescouting-data', label: 'Prescouting Data'},
     //{ to: '/statbotics-data', label: 'Statbotics Data' },
     { to: '/TBA-data', label: 'TBA Data' },
     { to: '/compare', label: 'Compare' },
