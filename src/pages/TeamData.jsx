@@ -15,7 +15,7 @@ function TeamData() {
     const teamStr = String(teamNumber)
     setSelectedTeams(prev => {
       const prevArray = Array.isArray(prev) ? prev : []
-      if (prevArray.includes(teamStr)) {
+      if (prevArray.includes(Number(teamStr))) {
         return prevArray.filter(t => t !== teamStr)
       }
       return [...prevArray, teamStr]
@@ -23,7 +23,7 @@ function TeamData() {
   }
 
   const clearAllTeams = () => {
-    setSelectedTeams([])
+    setSelectedTeams(selectedTeams)
   }
 
   const handleUseDataChange = async (scoutingId, checked) => {
