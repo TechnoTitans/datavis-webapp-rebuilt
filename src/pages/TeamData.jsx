@@ -23,7 +23,7 @@ function TeamData() {
   }
 
   const clearAllTeams = () => {
-    setSelectedTeams(selectedTeams)
+    setSelectedTeams([])
   }
 
   const handleUseDataChange = async (scoutingId, checked) => {
