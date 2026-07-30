@@ -194,35 +194,44 @@ function Upload() {
   const parseQRData = (qrText) => {
     try {
       const lines = qrText.split('\n').filter(line => line.trim() !== '')
+
+      const teamNumber = parseInt(lines[0])
+      const matchNumber = parseInt(lines[1])
+
       
       const data = {
-        'Scouting ID': `${lines[0]}_${lines[1]}_${lines[2]}`,
-        'Scouter Name': lines[3],
-        'Position': lines[4],
-        'Auto Path': lines[5] === 'null' ? null : lines[5],
-        'Shot While Moving': lines[6] === 'true',
-        'Cycle Count': lines[7],
-        'Tier': lines[8],
-        'Pin Rating': parseInt(lines[9]),
-        'Steal Rating': parseInt(lines[10]),
-        'Block Rating': parseInt(lines[11]),
-        'Ram Rating': parseInt(lines[12]),
-        'AntiPin Rating': parseInt(lines[13]),
-        'AntiSteal Rating': parseInt(lines[14]),
-        'AntiBlock Rating': parseInt(lines[15]),
-        'AntiRam Rating': parseInt(lines[16]),
-        'Endgame Climb': lines[17],
-        'Bump?': lines[18] === 'true',
-        'Trench?': lines[19] === 'true',
-        'Penalties?': lines[20] === 'true',
-        'Notes': lines[21],
+        'Scouting ID': `GACMP_${teamNumber}_${matchNumber}`,
+        'Scouter Name': lines[2],
+        'Position': lines[3],
+        'Auto Path': lines[4] === 'null' ? null : lines[4],
+        'Cycle Count': parseInt(lines[5]),
+        'Tier': parseInt(lines[6]),
+        'Pin Rating': parseInt(lines[7]),
+        'Steal Rating': parseInt(lines[8]),
+        'Block Rating': parseInt(lines[9]),
+        'Ram Rating': parseInt(lines[10]),
+        'AntiPin Rating': parseInt(lines[11]),
+        'AntiSteal Rating': parseInt(lines[12]),
+        'AntiBlock Rating': parseInt(lines[13]),
+        'AntiRam Rating': parseInt(lines[14]),
+        'Endgame Climb': lines[15],
+        'Bump?': lines[16] === 'true',
+        'Trench?': lines[17] === 'true',
+        'Penalties?': lines[18] === 'true',
+        'Notes': lines[19],
         'Use Data': true,
-        _teamNumber: parseInt(lines[1]),
-        _matchNumber: parseInt(lines[2])
+        _teamNumber: teamNumber,
+        _matchNumber: matchNumber,
       }
+    
+      console.log("Parsed QR:", data)
+      
 
       setParsedData(data)
       setMessage('QR code parsed successfully!')
+
+      return data
+
     } catch (error) {
       console.error('Error parsing QR data:', error)
       setMessage('Error parsing QR code: ' + error.message)

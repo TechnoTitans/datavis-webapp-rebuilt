@@ -63,6 +63,8 @@ export const updateMatchUseData = async ({ scoutingId, value }) => {
 }
 
 export const insertUnconfirmedData = async (row) => {
+  console.log("INSERTING UNCONFIRMED:", row)
+
   const scoutingId = row?.['Scouting ID']
   return await runOrQueue(
     {
@@ -90,8 +92,8 @@ export const approveUnconfirmedData = async (unconfirmedItem) => {
         'Scouter Name': unconfirmedItem['Scouter Name'],
         'Position': unconfirmedItem['Position'],
         'Auto Path': unconfirmedItem['Auto Path'],
-        'Shot While Moving': unconfirmedItem['Shot While Moving'],
-        'Shot Coordinates': unconfirmedItem['Shot Coordinates'],
+        'Cycle Count': unconfirmedItem['Cycle Count'],
+        'Tier': unconfirmedItem['Tier'],
         'Pin Rating': unconfirmedItem['Pin Rating'],
         'Steal Rating': unconfirmedItem['Steal Rating'],
         'Block Rating': unconfirmedItem['Block Rating'],
@@ -108,6 +110,7 @@ export const approveUnconfirmedData = async (unconfirmedItem) => {
         'Use Data': unconfirmedItem['Use Data'],
       }
 
+      console.log("APPROVING MATCH DATA:", matchData)
       const insertResult = await supabase.from('match_data').insert([matchData])
       if (insertResult.error) return insertResult
 
